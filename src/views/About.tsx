@@ -8,6 +8,7 @@ export const APP = {
   name: "UsageTray",
   author: "Sedat Okutan",
   email: "sedat@okutan.org",
+  website: "https://www.okutan.org",
   github: "https://github.com/hsnsdt/usagebar",
   issues: "https://github.com/hsnsdt/usagebar/issues",
   releases: "https://github.com/hsnsdt/usagebar/releases",
@@ -30,6 +31,14 @@ function MailGlyph() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M3 7l9 6 9-6" />
+    </svg>
+  );
+}
+function GlobeGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
     </svg>
   );
 }
@@ -92,6 +101,7 @@ export default function About({ onBack }: { onBack: () => void }) {
         <div className="eyebrow eyebrow--group">{t("aboutDeveloper")}</div>
         <section className="row-card row-card--list">
           <LinkRow icon={<MailGlyph />} title={APP.author} sub={APP.email} onClick={() => open(`mailto:${APP.email}`)} />
+          <LinkRow icon={<GlobeGlyph />} title={t("aboutWebsite")} sub="www.okutan.org" onClick={() => open(APP.website)} />
         </section>
 
         <div className="eyebrow eyebrow--group">{t("aboutProject")}</div>

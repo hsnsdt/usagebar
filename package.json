@@ -1,9 +1,9 @@
 {
   "name": "usagetray",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
-  "author": "Sedat Okutan <sedat@okutan.org>",
+  "author": "Sedat Okutan <sedat@okutan.org> (https://www.okutan.org)",
   "license": "MIT",
   "repository": "github:hsnsdt/usagebar",
   "scripts": {
