@@ -11,9 +11,10 @@ const SEVEN_DAY_OPTIONS = [80, 95];
 type Props = {
   onBack: () => void;
   onSaved: (s: Settings) => void;
+  onAbout: () => void;
 };
 
-export default function SettingsView({ onBack, onSaved }: Props) {
+export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
   useLang();
   const [s, setS] = useState<Settings | null>(null);
   const [version, setVersion] = useState("");
@@ -185,7 +186,10 @@ export default function SettingsView({ onBack, onSaved }: Props) {
           <button className="link" onClick={() => invoke("open_logs_dir")}>
             {t("sOpenLogs")}
           </button>
-          <span className="settings__version">{version && `v${version}`}</span>
+          <button className="link" onClick={onAbout}>
+            {t("about")}
+            {version && <span className="settings__version"> · v{version}</span>}
+          </button>
           <button className="link link--danger" onClick={() => invoke("quit_app")}>
             {t("sQuit")}
           </button>

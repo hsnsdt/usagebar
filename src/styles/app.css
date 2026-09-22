@@ -847,3 +847,32 @@ select.input option {
 .foot--welcome {
   padding-top: 10px;
 }
+
+/* about */
+.feature--row {
+  width: 100%;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.feature--link {
+  cursor: pointer;
+}
+.feature--link:hover .feature__title {
+  color: var(--green);
+}
+.feature__chev {
+  flex: 0 0 auto;
+  color: var(--fg-3);
+  margin-left: auto;
+}
+.about__note {
+  margin: 2px 4px 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--fg-3);
+}

@@ -28,6 +28,7 @@ pub fn run() {
             crate::commands::autostart_enabled,
             crate::commands::open_logs_dir,
             crate::commands::app_version,
+            crate::commands::open_url,
             crate::commands::quit_app,
         ])
         .setup(|app| {
@@ -47,14 +48,17 @@ pub fn run() {
             let args: Vec<String> = std::env::args().collect();
             let first_run = handle.state::<AppState>().first_run;
             let want_settings = args.iter().any(|a| a == "--settings");
-            if first_run || want_settings || args.iter().any(|a| a == "--show") {
+            let want_about = args.iter().any(|a| a == "--about");
+            if first_run || want_settings || want_about || args.iter().any(|a| a == "--show") {
                 let h = handle.clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(600)).await;
                     tray::show_popup(&h);
+                    use tauri::Emitter;
                     if want_settings {
-                        use tauri::Emitter;
                         let _ = h.emit("navigate", "settings");
+                    } else if want_about {
+                        let _ = h.emit("navigate", "about");
                     }
                 });
             }

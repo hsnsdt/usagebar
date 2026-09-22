@@ -4,13 +4,14 @@ import { listen } from "@tauri-apps/api/event";
 import Dashboard from "./views/Dashboard";
 import SettingsView from "./views/Settings";
 import Welcome from "./views/Welcome";
+import About from "./views/About";
 import { hidePopup, useUsage } from "./hooks/useUsage";
 import { setLanguage, t, useLang } from "./i18n";
 import type { Settings, Theme } from "./types";
 import "./styles/tokens.css";
 import "./styles/app.css";
 
-type View = "dashboard" | "settings" | "welcome";
+type View = "dashboard" | "settings" | "welcome" | "about";
 
 export default function App() {
   useLang();
@@ -31,7 +32,7 @@ export default function App() {
   // Tray menu "Settings" and re-play of the enter animation on each open.
   useEffect(() => {
     const unNav = listen<string>("navigate", (e) => {
-      if (e.payload === "settings" || e.payload === "dashboard") setView(e.payload);
+      if (e.payload === "settings" || e.payload === "dashboard" || e.payload === "about") setView(e.payload);
     });
     const unShown = listen("popup-shown", () => {
       setEnterKey((k) => k + 1);
@@ -46,6 +47,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (view === "settings") setView("dashboard");
+        else if (view === "about") setView("settings");
         else if (view !== "welcome") hidePopup();
       }
     };
@@ -62,8 +64,14 @@ export default function App() {
             setView("dashboard");
           }}
         />
+      ) : view === "about" ? (
+        <About onBack={() => setView("settings")} />
       ) : view === "settings" ? (
-        <SettingsView onBack={() => setView("dashboard")} onSaved={(s) => applySettings(s)} />
+        <SettingsView
+          onBack={() => setView("dashboard")}
+          onSaved={(s) => applySettings(s)}
+          onAbout={() => setView("about")}
+        />
       ) : snapshot ? (
         <Dashboard snapshot={snapshot} now={now} onOpenSettings={() => setView("settings")} />
       ) : (

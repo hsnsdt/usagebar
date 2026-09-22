@@ -76,6 +76,20 @@ pub fn open_logs_dir() {
     let _ = std::process::Command::new("explorer").arg(&dir).spawn();
 }
 
+/// Open a link in the default browser / mail client. Only https and mailto
+/// are allowed so the webview cannot launch arbitrary programs.
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("mailto:")) {
+        return Err("unsupported url".into());
+    }
+    std::process::Command::new("rundll32")
+        .args(["url.dll,FileProtocolHandler", &url])
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
