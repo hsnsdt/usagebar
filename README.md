@@ -1,98 +1,100 @@
 # UsageTray
 
-Windows sistem tepsisinde yaşayan, Claude Code kullanım limitlerini gösteren küçük bir masaüstü uygulaması.
-macOS'taki Usagebar'ın Windows muadili.
+[Türkçe](README.tr.md) · **English**
+
+A small Windows system tray app that shows your Claude Code usage limits.
+The Windows counterpart of Usagebar on macOS.
 
 <p align="center">
   <img src="docs/popup.png" alt="UsageTray popup" width="340">
 </p>
 
-- **Tepsi ikonu:** 5 saatlik pencerenin doluluğu, renk kodlu halka (yeşil / sarı / turuncu / kırmızı). Tooltip'te iki pencere birden.
-- **Popup:** 5 saatlik pencere için halka gösterge, canlı geri sayım ve tempo yorumu; haftalık limit; kalan context (proje ve model adıyla); son 7 günün günlük token grafiği ve düne göre değişim okları.
-- **Tempo işareti:** bar ve halka üstündeki küçük çizgi, pencerenin ne kadarının geçtiğini gösterir. Doluluk çizginin solundaysa rahatsın.
-- **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez.
-- Windows ile başlar, arka planda çalışır. Boşta ~35 MB RAM, ~0 CPU. Kurulum 2.5 MB.
-- Türkçe ve İngilizce. Varsayılan sistem dili; ayarlardan değiştirilebilir. Tepsi menüsü, tooltip ve bildirimler de aynı dili kullanır.
+- **Tray icon:** a colour-coded ring (green / yellow / orange / red) filled to the 5-hour window's utilisation. The tooltip shows both windows.
+- **Popup:** ring gauge for the 5-hour window with a live countdown and a pace verdict; weekly limit; remaining context (with project and model); a 7-day daily token chart with up/down change badges versus yesterday.
+- **Pace marker:** the small tick on each bar and on the ring shows how much of the window has elapsed. If the fill is left of the tick, you are fine.
+- **Notifications:** 5-hour window at 50% / 75% / 90%, weekly at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window.
+- Starts with Windows, runs in the background. About 35 MB RAM idle, ~0 CPU, 2.5 MB installer.
+- Turkish and English. Follows the system language by default; switchable in settings. The tray menu, tooltip and toasts use the same language.
 
-## Kurulum
+## Install
 
-1. Releases sayfasından `UsageTray_x.y.z_x64-setup.exe` dosyasını indir ve çalıştır. Kullanıcı bazlı kurulum, yönetici gerekmez.
-2. Terminalde en az bir kez `claude` çalıştırıp giriş yapmış olman gerekir. Uygulama Claude Code'un kendi oturumunu okur, ayrı bir giriş istemez.
-3. WebView2 runtime yoksa kurulum sırasında otomatik indirilir. Windows 11'de zaten vardır.
+1. Download `UsageTray_x.y.z_x64-setup.exe` from Releases and run it. Per-user install, no admin rights needed.
+2. You must have run `claude` in a terminal and signed in at least once. UsageTray reads Claude Code's own session; it never asks you to sign in.
+3. If the WebView2 runtime is missing it is downloaded during setup. Windows 11 already has it.
 
-> **Windows 11 notu:** Yeni tepsi ikonları varsayılan olarak taşma menüsünde (`^`) gizlenir. Sürekli görünsün istersen ikonu oradan görev çubuğuna sürükle, ya da Ayarlar → Kişiselleştirme → Görev çubuğu → Diğer sistem tepsisi simgeleri altından aç.
+> **Windows 11 note:** new tray icons are hidden in the overflow menu (`^`) by default. Drag the icon onto the taskbar to keep it visible, or enable it under Settings → Personalization → Taskbar → Other system tray icons.
 
-Sol tık popup'ı açar, odak kaybedince ya da Esc ile kapanır. Sağ tık: Yenile / Ayarlar / Başlangıçta çalıştır / Çıkış.
+Left click opens the popup; it closes on focus loss or Esc. Right click: Refresh / Settings / Start with Windows / Quit.
 
-## Güvenlik ve gizlilik
+## Security and privacy
 
-Bir uygulamanın OAuth token'ını okumasına şüpheyle yaklaşmak doğru. Bu yüzden:
+Being suspicious of an app that reads your OAuth token is the right instinct. So:
 
-- Token yalnızca `https://api.anthropic.com/api/oauth/usage` adresine gider. Başka hiçbir ağ isteği yok; CSP'de `connect-src` sadece bu alan adı.
-- `~/.claude/.credentials.json` **salt okunur** açılır. Uygulama token yenilemez, dosyaya yazmaz; yenilemeyi Claude Code kendisi yapar.
-- Token hiçbir log satırına yazılmaz; log'da `sk-ant-oat01-****` olarak maskelenir.
-- Telemetri, analytics, crash reporting yok.
-- Tüm veriler yerelde: `%APPDATA%\UsageTray\` (ayarlar, cache, tarama durumu, bildirim durumu, loglar).
+- The token is sent only to `https://api.anthropic.com/api/oauth/usage`. There is no other network request; the CSP restricts `connect-src` to that host.
+- `~/.claude/.credentials.json` is opened **read-only**. The app never refreshes the token or writes to the file; Claude Code does the refreshing.
+- The token never appears in a log line; it is masked as `sk-ant-oat01-****`.
+- No telemetry, analytics or crash reporting.
+- Everything stays local under `%APPDATA%\UsageTray\` (settings, cache, scan state, notification state, logs).
 
-Kod küçük ve okunabilir; şüphen varsa `src-tauri/src/usage_api.rs` ve `credentials.rs` dosyalarına bak.
+The code is small and readable; if in doubt, look at `src-tauri/src/usage_api.rs` and `credentials.rs`.
 
-## Veri kaynakları
+## Data sources
 
-| Veri | Kaynak |
+| Data | Source |
 |---|---|
-| 5 saatlik / haftalık limit | Anthropic OAuth usage endpoint'i. Resmi değil, topluluk keşfi; şema değişirse uygulama cache'e düşer, çökmez. |
-| Kalan context, günlük token / mesaj, 7 günlük geçmiş | `~/.claude/projects/**/*.jsonl` transcript'leri. Artımlı okunur, dosya başına byte offset tutulur; `message.id + requestId` ile dedupe. |
-| Plan rozeti | `.credentials.json` içindeki `subscriptionType` |
+| 5-hour / weekly limits | Anthropic's OAuth usage endpoint. Not official, community-discovered; if the schema changes the app falls back to its cache instead of crashing. |
+| Remaining context, daily tokens / messages, 7-day history | `~/.claude/projects/**/*.jsonl` transcripts. Read incrementally with a byte offset per file; deduped on `message.id + requestId`. |
+| Plan badge | `subscriptionType` from `.credentials.json` |
 
-API en fazla 5 dakikada bir sorgulanır. Aralık ayarlardan artırılabilir, 180 saniyenin altına inemez. 429 alınırsa üstel geri çekilme uygulanır (5 → 10 → 20 → 30 dk) ve son bilinen veri "bayat" işaretiyle gösterilir.
+The API is polled at most every 5 minutes. The interval can be raised in settings but never goes below 180 seconds. On a 429 the app backs off exponentially (5 → 10 → 20 → 30 min) and keeps showing the last known data marked as stale.
 
-Context hesabı `input + cache_read + cache_creation + output` toplamıdır; varsayılan kullanılabilir context 155K (autocompact payı düşülmüş), ayarlardan değiştirilebilir. 1M context'li modellerde bu değeri yükseltmen gerekir.
+Context is computed as `input + cache_read + cache_creation + output` of the latest assistant message; the default usable context is 155K (autocompact share excluded) and can be changed in settings. Raise it for 1M-context models.
 
-## Durumlar
+## States
 
-| Popup'ta gördüğün | Anlamı |
+| What the popup says | Meaning |
 |---|---|
-| Claude Code bulunamadı | Credential dosyası yok. Terminalde `claude` çalıştırıp giriş yap. |
-| Token süresi dolmuş | Access token ~1 saatte dolar ve sadece Claude Code çalışırken yenilenir. Bir kez `claude` çalıştırman yeter; hata değil. |
-| Hız sınırı | 429 alındı, X dk sonra tekrar denenecek. |
-| Çevrimdışı | Bağlantı yok, cache gösteriliyor. |
+| Claude Code not found | No credential file. Run `claude` in a terminal and sign in. |
+| Token expired | Access tokens last about an hour and are only refreshed while Claude Code is running. Running `claude` once is enough; this is not an error. |
+| Rate limit | Got a 429, retrying in X minutes. |
+| Offline | No connection, showing cached data. |
 
-Yerel veriler (context, günlük istatistikler) API'den bağımsızdır; bu durumlarda da gösterilmeye devam eder.
+Local data (context, daily stats) does not depend on the API and keeps updating in all of these states.
 
-## Ayarlar
+## Settings
 
-Popup içinde dişli ikonu. Yenileme aralığı, kullanılabilir context, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
+The gear icon in the popup. Refresh interval, usable context, theme (dark / light / system), language (system / Türkçe / English), percent text on the tray icon, start with Windows, notification thresholds. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
 
-## Geliştirme
+## Development
 
-Gereksinimler: Rust (stable, MSVC), Node 20+, Visual Studio Build Tools (C++ iş yükü), WebView2.
+Requirements: Rust (stable, MSVC), Node 20+, Visual Studio Build Tools (C++ workload), WebView2.
 
 ```
 npm install
-npm run tauri dev        # geliştirme (hot reload)
+npm run tauri dev        # development (hot reload)
 npm run tauri build      # NSIS installer: target/release/bundle/nsis/
-cargo test               # Rust birim testleri
-cargo run -- --probe     # credential + API doğrulama, ham JSON'u basar
+cargo test               # Rust unit tests
+cargo run -- --probe     # credential + API check, prints the raw JSON
 ```
 
-Hata ayıklama: `usagetray.exe --show` popup'ı açılışta gösterir, `--settings` ayarlar sekmesiyle açar, `--pin` odak kaybında gizlemeyi kapatır (ekran görüntüsü için). `USAGETRAY_LOG=debug` ayrıntılı log verir. `APPDATA` değişkenini başka bir klasöre yönlendirerek temiz bir ilk açılış denenebilir.
+Debugging: `usagetray.exe --show` opens the popup at startup, `--settings` opens it on the settings view, `--pin` disables auto-hide on focus loss (for screenshots). `USAGETRAY_LOG=debug` enables verbose logs. Point `APPDATA` at another folder to simulate a clean first run.
 
-Yerleşim:
+Layout:
 
 ```
-src/                      popup UI (React + TS, plain CSS); src/i18n.ts metinler
-src-tauri/src/i18n.rs     Rust tarafı metinler (menü, tooltip, bildirim)
-src-tauri/src/config.rs   sabitler: endpoint, header'lar, limitler
-src-tauri/src/credentials.rs   credential okuma (salt okunur)
-src-tauri/src/usage_api.rs     API istemcisi, cache, backoff
-src-tauri/src/transcripts.rs   JSONL artımlı tarama, 7 günlük geçmiş
-src-tauri/src/tray.rs          dinamik ikon, menü, popup konumu
-src-tauri/src/state.rs         AppState, poll döngüsü, usage-updated event
-src-tauri/src/toasts.rs        bildirimler ve dedupe
+src/                      popup UI (React + TS, plain CSS); src/i18n.ts strings
+src-tauri/src/i18n.rs     Rust-side strings (menu, tooltip, toasts)
+src-tauri/src/config.rs   constants: endpoint, headers, limits
+src-tauri/src/credentials.rs   credential reading (read-only)
+src-tauri/src/usage_api.rs     API client, cache, backoff
+src-tauri/src/transcripts.rs   incremental JSONL scan, 7-day history
+src-tauri/src/tray.rs          dynamic icon, menu, popup placement
+src-tauri/src/state.rs         AppState, poll loop, usage-updated event
+src-tauri/src/toasts.rs        notifications and dedupe
 ```
 
-Stack: Tauri v2, Rust, React 19, Vite. İkon tiny-skia ile runtime'da çizilir. Tam spec: `USAGETRAY_SPEC.md`, çalışma notları: `CLAUDE.md`.
+Stack: Tauri v2, Rust, React 19, Vite. The icon is drawn at runtime with tiny-skia. Full spec: `USAGETRAY_SPEC.md`, working notes: `CLAUDE.md`.
 
-## Lisans
+## License
 
-MIT. Gömülü Inter fontu SIL Open Font License (`src-tauri/assets/Inter-LICENSE.txt`).
+MIT. The bundled Inter font is under the SIL Open Font License (`src-tauri/assets/Inter-LICENSE.txt`).
