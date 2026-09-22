@@ -577,49 +577,39 @@ select {
   color: var(--fg-3);
 }
 
-/* ------------------------------------------------------------- settings */
+/* ------------------------------------------------------------- sub views (settings / welcome) */
 
-.settings {
-  flex: 1;
-  overflow-y: auto;
-  margin: 0 calc(var(--pad) * -1);
-  padding: 0 var(--pad);
-  scrollbar-width: thin;
+.head--sub {
+  margin-bottom: 10px;
 }
-.settings__loading {
+.iconbtn--back {
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+}
+.center-note {
   padding: 40px 0;
   text-align: center;
   color: var(--fg-3);
 }
-.settings__group {
-  margin: 14px 0 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg-3);
-}
-.settings__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid var(--rule);
-  font-size: 11px;
-  color: var(--fg-3);
-}
-.settings__version {
-  font-variant-numeric: tabular-nums;
+.eyebrow--group {
+  margin: 4px 4px -2px;
 }
 
+.row-card--list {
+  padding: 2px 14px;
+}
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid var(--rule);
+}
+.row-card--list .row:last-child,
+.row-card--list .feature:last-child {
+  border-bottom: 0;
 }
 .row--toggle {
   cursor: pointer;
@@ -629,22 +619,26 @@ select {
   flex-direction: column;
   gap: 1px;
   font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 .row__hint {
   font-size: 11px;
+  font-weight: 400;
   color: var(--fg-3);
 }
 .row__ctl {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
 }
 
 .input {
   height: 28px;
   padding: 0 8px;
   border-radius: 8px;
-  border: 1px solid var(--edge);
+  border: 1px solid var(--card-edge);
   background: var(--input-bg);
   color: var(--fg);
   outline: none;
@@ -663,8 +657,16 @@ select {
 .input--wide {
   width: 88px;
 }
+.input--lang {
+  height: 26px;
+  font-size: 12px;
+}
 select.input {
   padding-right: 4px;
+}
+select.input option {
+  background: var(--bg);
+  color: var(--fg);
 }
 .unit {
   font-size: 11px;
@@ -678,17 +680,19 @@ select.input {
 .chip {
   height: 24px;
   padding: 0 9px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: var(--chip);
   color: var(--fg-2);
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
 .chip--on {
-  background: var(--chip-on);
-  color: var(--fg);
+  background: color-mix(in srgb, var(--green) 16%, transparent);
+  border-color: color-mix(in srgb, var(--green) 40%, transparent);
+  color: var(--green);
 }
 .chip:disabled {
   opacity: 0.4;
@@ -724,6 +728,7 @@ select.input {
 }
 .switch--on {
   background: var(--green);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--green) 45%, transparent);
 }
 .switch--on .switch__knob {
   transform: translateX(16px);
@@ -734,7 +739,7 @@ select.input {
   height: 28px;
   padding: 0 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--chip-on);
   color: var(--fg);
   font-weight: 600;
@@ -748,7 +753,35 @@ select.input {
   background: var(--green);
   color: #0b1a10;
 }
+.btn--accent {
+  background: var(--green);
+  color: #0b1a10;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--green) 35%, transparent);
+}
+.btn--accent:hover {
+  filter: brightness(1.05);
+}
+.btn--block {
+  width: 100%;
+  height: 36px;
+  font-size: 13.5px;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
+.settings__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 2px;
+  font-size: 11px;
+  color: var(--fg-3);
+}
+.settings__version {
+  font-variant-numeric: tabular-nums;
+}
 .link {
   border: 0;
   background: transparent;
@@ -765,39 +798,52 @@ select.input {
   color: var(--red);
 }
 
-/* ------------------------------------------------------------- welcome */
-
-.welcome {
-  flex: 1;
-  overflow-y: auto;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--fg-2);
+/* welcome */
+.hero--welcome {
+  gap: 14px;
+  padding: 14px;
 }
-.welcome__lead {
-  margin: 0 0 8px;
-  color: var(--fg);
+.hero__big--sm {
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  margin-bottom: 3px;
 }
-.welcome__list {
-  list-style: none;
-  margin: 0 0 4px;
-  padding: 0;
+.ring__pct--sm {
+  font-size: 22px;
+}
+.feature {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
 }
-.welcome__list li {
-  padding: 6px 9px;
-  border-radius: 10px;
-  background: var(--chip);
-  font-size: 12px;
+.feature__icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+  margin-top: 1px;
 }
-.welcome__k {
-  display: block;
-  font-weight: 600;
-  color: var(--fg);
-  margin-bottom: 1px;
+.feature__text {
+  min-width: 0;
+}
+.feature__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.feature__body {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--fg-2);
+  margin-top: 1px;
 }
 .foot--welcome {
-  justify-content: flex-end;
+  padding-top: 10px;
 }

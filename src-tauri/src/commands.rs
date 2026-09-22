@@ -36,6 +36,9 @@ pub fn save_settings<R: Runtime>(
             tracing::warn!("autostart change failed: {e}");
         }
     }
+    if before.language != saved.language {
+        tray::rebuild_menu(&app);
+    }
     // Re-derive context.usable + tray text without waiting for the next poll.
     if let Ok(mut snap) = state.snapshot.lock() {
         if let Some(ctx) = snap.context.as_mut() {

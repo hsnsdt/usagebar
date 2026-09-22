@@ -17,7 +17,7 @@ pub fn run() {
                 .build(),
         )
         .manage(AppState::new())
-        .manage(TrayState::default())
+        .manage(TrayState::<tauri::Wry>::default())
         .invoke_handler(tauri::generate_handler![
             crate::commands::get_snapshot,
             crate::commands::get_settings,
@@ -75,6 +75,10 @@ pub fn run() {
                         }
                         if tray::in_show_grace(w.app_handle()) {
                             tracing::debug!("focus lost right after show; keeping popup");
+                            return;
+                        }
+                        // `--pin`: debugging aid, never auto-hide (screenshots).
+                        if std::env::args().any(|a| a == "--pin") {
                             return;
                         }
                         let (pid, title) = crate::win::foreground_info();

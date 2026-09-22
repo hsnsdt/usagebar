@@ -9,7 +9,7 @@ use tauri_plugin_notification::NotificationExt;
 
 use crate::settings::Settings;
 use crate::state::{AppState, Snapshot, WindowSnap};
-use crate::{config, util};
+use crate::config;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
@@ -53,6 +53,7 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
         return out;
     }
     let now = chrono::Utc::now();
+    let st_lang = settings.strings();
 
     // API windows: only judge fresh data. Cached/stale numbers may belong to a
     // window that has already reset.
@@ -65,12 +66,8 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
             &mut st.five_hour_reset,
             &mut st.five_hour_fired,
         ) {
-            let body = match w.resets_at_utc().map(|at| util::remaining_tr(at, now)) {
-                Some(r) if r == "şimdi" => "Sıfırlanmak üzere.".to_string(),
-                Some(r) => format!("{r} sonra sıfırlanıyor. İşini toparla."),
-                None => "İşini toparla.".into(),
-            };
-            out.push(Toast { title: format!("Claude — 5 saatlik limit %{t}"), body });
+            let body = st_lang.toast_five_body(w.resets_at_utc().map(|at| st_lang.remaining(at, now)));
+            out.push(Toast { title: st_lang.toast_five_title(t), body });
         }
     }
 
@@ -81,11 +78,10 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
             &mut st.seven_day_reset,
             &mut st.seven_day_fired,
         ) {
-            let body = match w.resets_at_utc() {
-                Some(at) => format!("{}'da sıfırlanıyor.", util::local_clock_tr(at)),
-                None => "Haftalık kotan azalıyor.".into(),
-            };
-            out.push(Toast { title: format!("Claude — haftalık limit %{t}"), body });
+            out.push(Toast {
+                title: st_lang.toast_week_title(t),
+                body: st_lang.toast_week_body(w.resets_at_utc()),
+            });
         }
     }
 
@@ -101,8 +97,8 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
             if !st.context_fired {
                 st.context_fired = true;
                 out.push(Toast {
-                    title: "Claude — context azalıyor".into(),
-                    body: format!("{}K token kaldı. Yakında autocompact tetiklenecek.", remaining / 1000),
+                    title: st_lang.toast_context_title().into(),
+                    body: st_lang.toast_context_body(remaining / 1000),
                 });
             }
         } else if remaining > low.saturating_mul(2) {

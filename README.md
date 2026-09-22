@@ -12,6 +12,7 @@ macOS'taki Usagebar'ın Windows muadili.
 - **Tempo işareti:** bar ve halka üstündeki küçük çizgi, pencerenin ne kadarının geçtiğini gösterir. Doluluk çizginin solundaysa rahatsın.
 - **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez.
 - Windows ile başlar, arka planda çalışır. Boşta ~35 MB RAM, ~0 CPU. Kurulum 2.5 MB.
+- Türkçe ve İngilizce. Varsayılan sistem dili; ayarlardan değiştirilebilir. Tepsi menüsü, tooltip ve bildirimler de aynı dili kullanır.
 
 ## Kurulum
 
@@ -60,7 +61,7 @@ Yerel veriler (context, günlük istatistikler) API'den bağımsızdır; bu duru
 
 ## Ayarlar
 
-Popup içinde dişli ikonu. Yenileme aralığı, kullanılabilir context, tema (koyu / açık / sistem), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
+Popup içinde dişli ikonu. Yenileme aralığı, kullanılabilir context, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
 
 ## Geliştirme
 
@@ -74,12 +75,13 @@ cargo test               # Rust birim testleri
 cargo run -- --probe     # credential + API doğrulama, ham JSON'u basar
 ```
 
-Hata ayıklama: `usagetray.exe --show` popup'ı açılışta gösterir, `--settings` ayarlar sekmesiyle açar. `USAGETRAY_LOG=debug` ayrıntılı log verir. `APPDATA` değişkenini başka bir klasöre yönlendirerek temiz bir ilk açılış denenebilir.
+Hata ayıklama: `usagetray.exe --show` popup'ı açılışta gösterir, `--settings` ayarlar sekmesiyle açar, `--pin` odak kaybında gizlemeyi kapatır (ekran görüntüsü için). `USAGETRAY_LOG=debug` ayrıntılı log verir. `APPDATA` değişkenini başka bir klasöre yönlendirerek temiz bir ilk açılış denenebilir.
 
 Yerleşim:
 
 ```
-src/                      popup UI (React + TS, plain CSS)
+src/                      popup UI (React + TS, plain CSS); src/i18n.ts metinler
+src-tauri/src/i18n.rs     Rust tarafı metinler (menü, tooltip, bildirim)
 src-tauri/src/config.rs   sabitler: endpoint, header'lar, limitler
 src-tauri/src/credentials.rs   credential okuma (salt okunur)
 src-tauri/src/usage_api.rs     API istemcisi, cache, backoff

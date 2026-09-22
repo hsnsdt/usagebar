@@ -310,6 +310,7 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
     }
     let result = usage_api::fetch(client, &cred.access_token).await;
     let now = Utc::now();
+    let st = settings.strings();
 
     let mut wait = interval + jitter;
     if let Ok(mut snap) = state.snapshot.lock() {
@@ -343,31 +344,28 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
                 snap.status = Status::RateLimited;
                 snap.stale = true;
                 snap.retry_in_sec = Some(delay.as_secs());
-                snap.message = Some(format!(
-                    "Anthropic hız sınırı — {} dk sonra tekrar denenecek. Aşağıdaki veri bayat.",
-                    (delay.as_secs() + 59) / 60
-                ));
+                snap.message = Some(st.msg_rate_limited((delay.as_secs() + 59) / 60));
                 tracing::warn!("rate limited; backing off {}s", delay.as_secs());
             }
             Err(FetchError::Unauthorized(code)) => {
                 snap.status = Status::TokenExpired;
                 snap.stale = true;
                 snap.retry_in_sec = Some(wait.as_secs());
-                snap.message = Some("Token geçersiz. Terminalde bir kez `claude` çalıştır.".into());
+                snap.message = Some(st.msg_unauthorized().into());
                 tracing::warn!("unauthorized ({code})");
             }
             Err(e) if e.is_offline() => {
                 snap.status = Status::Offline;
                 snap.stale = true;
                 snap.retry_in_sec = Some(wait.as_secs());
-                snap.message = Some("Bağlantı yok, son bilinen veri gösteriliyor.".into());
+                snap.message = Some(st.msg_offline().into());
                 tracing::warn!("offline: {e}");
             }
             Err(e) => {
                 snap.status = Status::Error;
                 snap.stale = true;
                 snap.retry_in_sec = Some(wait.as_secs());
-                snap.message = Some("Kullanım verisi alınamadı. (detay için log)".into());
+                snap.message = Some(st.msg_error().into());
                 tracing::error!("usage fetch failed: {e}");
             }
         }
@@ -379,6 +377,7 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
 
 /// Update the snapshot for a credential problem. Returns an override wait.
 fn handle_credential_error(state: &AppState, err: CredentialError) -> Option<Duration> {
+    let st = state.settings().strings();
     let Ok(mut snap) = state.snapshot.lock() else { return None };
     snap.stale = true;
     snap.retry_in_sec = None;
@@ -388,18 +387,18 @@ fn handle_credential_error(state: &AppState, err: CredentialError) -> Option<Dur
             snap.plan = None;
             snap.five_hour = None;
             snap.seven_day = None;
-            snap.message = Some("Claude Code bulunamadı. Terminalde `claude` çalıştırıp giriş yap.".into());
+            snap.message = Some(st.msg_no_creds().into());
             tracing::info!("no credentials");
         }
         CredentialError::Expired { subscription_type, .. } => {
             snap.status = Status::TokenExpired;
             snap.plan = subscription_type;
-            snap.message = Some("Token süresi dolmuş. Terminalde bir kez `claude` çalıştır.".into());
+            snap.message = Some(st.msg_expired().into());
             tracing::info!("token expired; skipping request");
         }
         CredentialError::Malformed(m) => {
             snap.status = Status::Error;
-            snap.message = Some("Credential dosyası okunamadı. (detay için log)".into());
+            snap.message = Some(st.msg_cred_malformed().into());
             tracing::error!("credentials malformed: {m}");
         }
     }

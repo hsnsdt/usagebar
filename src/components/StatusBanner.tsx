@@ -1,18 +1,20 @@
 import { AlertIcon, InfoIcon } from "./Icons";
+import { t, type Key } from "../i18n";
 import type { Snapshot } from "../types";
 
-const FALLBACK: Record<Snapshot["status"], string | null> = {
+const FALLBACK: Record<Snapshot["status"], Key | null> = {
   ok: null,
-  no_credentials: "Claude Code bulunamadı. Terminalde claude çalıştırıp giriş yap.",
-  token_expired: "Token süresi dolmuş. Terminalde bir kez claude çalıştır.",
-  rate_limited: "Anthropic hız sınırı. Aşağıdaki veri bayat.",
-  offline: "Bağlantı yok, son bilinen veri gösteriliyor.",
-  error: "Kullanım verisi alınamadı. (detay için log)",
+  no_credentials: "bannerNoCreds",
+  token_expired: "bannerTokenExpired",
+  rate_limited: "bannerRateLimited",
+  offline: "bannerOffline",
+  error: "bannerError",
 };
 
 export default function StatusBanner({ snapshot }: { snapshot: Snapshot }) {
   if (snapshot.status === "ok") return null;
-  const text = snapshot.message ?? FALLBACK[snapshot.status];
+  const key = FALLBACK[snapshot.status];
+  const text = snapshot.message ?? (key ? t(key) : null);
   if (!text) return null;
   const soft = snapshot.status === "token_expired" || snapshot.status === "offline";
   return (

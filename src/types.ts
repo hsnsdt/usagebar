@@ -51,6 +51,7 @@ export type NotificationSettings = {
 };
 
 export type Theme = "system" | "dark" | "light";
+export type Language = "system" | "tr" | "en";
 
 export type Settings = {
   pollIntervalSec: number;
@@ -58,6 +59,7 @@ export type Settings = {
   usableContextTokens: number;
   startWithWindows: boolean;
   theme: Theme;
+  language: Language;
   notifications: NotificationSettings;
 };
 

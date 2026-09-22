@@ -5,6 +5,7 @@ import Dashboard from "./views/Dashboard";
 import SettingsView from "./views/Settings";
 import Welcome from "./views/Welcome";
 import { hidePopup, useUsage } from "./hooks/useUsage";
+import { setLanguage, t, useLang } from "./i18n";
 import type { Settings, Theme } from "./types";
 import "./styles/tokens.css";
 import "./styles/app.css";
@@ -12,21 +13,22 @@ import "./styles/app.css";
 type View = "dashboard" | "settings" | "welcome";
 
 export default function App() {
+  useLang();
   const { snapshot, now } = useUsage();
   const [view, setView] = useState<View>("dashboard");
   const [enterKey, setEnterKey] = useState(0);
 
-  // Theme from settings (system | dark | light).
+  // Theme + language from settings.
   useEffect(() => {
     invoke<Settings>("get_settings")
-      .then((s) => applyTheme(s.theme))
+      .then((s) => applySettings(s))
       .catch(() => {});
     invoke<boolean>("is_first_run")
       .then((first) => first && setView("welcome"))
       .catch(() => {});
   }, []);
 
-  // Tray menu "Ayarlar" and re-play of the enter animation on each open.
+  // Tray menu "Settings" and re-play of the enter animation on each open.
   useEffect(() => {
     const unNav = listen<string>("navigate", (e) => {
       if (e.payload === "settings" || e.payload === "dashboard") setView(e.payload);
@@ -56,19 +58,24 @@ export default function App() {
       {view === "welcome" ? (
         <Welcome
           onDone={(s) => {
-            applyTheme(s.theme);
+            applySettings(s);
             setView("dashboard");
           }}
         />
       ) : view === "settings" ? (
-        <SettingsView onBack={() => setView("dashboard")} onSaved={(s) => applyTheme(s.theme)} />
+        <SettingsView onBack={() => setView("dashboard")} onSaved={(s) => applySettings(s)} />
       ) : snapshot ? (
         <Dashboard snapshot={snapshot} now={now} onOpenSettings={() => setView("settings")} />
       ) : (
-        <div className="settings__loading">Yükleniyor…</div>
+        <div className="center-note">{t("loading")}</div>
       )}
     </div>
   );
+}
+
+function applySettings(s: Settings) {
+  applyTheme(s.theme);
+  setLanguage(s.language);
 }
 
 function applyTheme(theme: Theme) {

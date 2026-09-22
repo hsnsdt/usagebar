@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { BackIcon } from "../components/Icons";
+import { pct } from "../format";
+import { setLanguage, t, useLang, type LangSetting } from "../i18n";
 import { MIN_POLL_INTERVAL_SEC, type Settings, type Theme } from "../types";
 
 const FIVE_HOUR_OPTIONS = [50, 75, 90];
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function SettingsView({ onBack, onSaved }: Props) {
+  useLang();
   const [s, setS] = useState<Settings | null>(null);
   const [version, setVersion] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
@@ -21,7 +24,7 @@ export default function SettingsView({ onBack, onSaved }: Props) {
     invoke<string>("app_version").then(setVersion).catch(() => {});
   }, []);
 
-  if (!s) return <div className="settings__loading">Yükleniyor…</div>;
+  if (!s) return <div className="center-note">{t("loading")}</div>;
 
   const patch = (p: Partial<Settings>) => setS({ ...s, ...p });
   const patchN = (p: Partial<Settings["notifications"]>) =>
@@ -45,122 +48,146 @@ export default function SettingsView({ onBack, onSaved }: Props) {
 
   return (
     <>
-      <header className="head">
-        <div className="head__title">
-          <button className="iconbtn" title="Geri" aria-label="Geri" onClick={onBack}>
-            <BackIcon />
-          </button>
-          <span>Ayarlar</span>
+      <header className="head head--sub">
+        <div className="head__text">
+          <div className="head__title">
+            <button className="iconbtn iconbtn--back" title={t("back")} aria-label={t("back")} onClick={onBack}>
+              <BackIcon />
+            </button>
+            <span>{t("settings")}</span>
+          </div>
         </div>
         <div className="head__actions">
           <button className={`btn btn--primary${savedFlash ? " btn--ok" : ""}`} onClick={save}>
-            {savedFlash ? "Kaydedildi" : "Kaydet"}
+            {savedFlash ? t("saved") : t("save")}
           </button>
         </div>
       </header>
 
-      <div className="settings">
-        <Row label="Yenileme aralığı" hint={`en az ${MIN_POLL_INTERVAL_SEC} sn`}>
-          <input
-            className="input input--num"
-            type="number"
-            min={MIN_POLL_INTERVAL_SEC}
-            step={30}
-            value={s.pollIntervalSec}
-            onChange={(e) => patch({ pollIntervalSec: Number(e.target.value) })}
-            onBlur={() =>
-              patch({ pollIntervalSec: Math.max(MIN_POLL_INTERVAL_SEC, Math.round(s.pollIntervalSec || 0)) })
-            }
+      <div className="stack">
+        <div className="eyebrow eyebrow--group">{t("sGeneral")}</div>
+        <section className="row-card row-card--list">
+          <Row label={t("sPoll")} hint={t("sPollHint", { min: MIN_POLL_INTERVAL_SEC })}>
+            <input
+              className="input input--num"
+              type="number"
+              min={MIN_POLL_INTERVAL_SEC}
+              step={30}
+              value={s.pollIntervalSec}
+              onChange={(e) => patch({ pollIntervalSec: Number(e.target.value) })}
+              onBlur={() =>
+                patch({ pollIntervalSec: Math.max(MIN_POLL_INTERVAL_SEC, Math.round(s.pollIntervalSec || 0)) })
+              }
+            />
+            <span className="unit">{t("sSec")}</span>
+          </Row>
+          <Row label={t("sContext")} hint={t("sContextHint")}>
+            <input
+              className="input input--num input--wide"
+              type="number"
+              min={10000}
+              step={5000}
+              value={s.usableContextTokens}
+              onChange={(e) => patch({ usableContextTokens: Number(e.target.value) })}
+            />
+            <span className="unit">{t("sToken")}</span>
+          </Row>
+          <Row label={t("sTheme")}>
+            <select className="input" value={s.theme} onChange={(e) => patch({ theme: e.target.value as Theme })}>
+              <option value="dark">{t("themeDark")}</option>
+              <option value="light">{t("themeLight")}</option>
+              <option value="system">{t("themeSystem")}</option>
+            </select>
+          </Row>
+          <Row label={t("sLanguage")}>
+            <select
+              className="input"
+              value={s.language}
+              onChange={(e) => {
+                const language = e.target.value as LangSetting;
+                patch({ language });
+                setLanguage(language);
+              }}
+            >
+              <option value="system">{t("langSystem")}</option>
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+            </select>
+          </Row>
+        </section>
+
+        <div className="eyebrow eyebrow--group">{t("sTray")}</div>
+        <section className="row-card row-card--list">
+          <Toggle
+            label={t("sPercentText")}
+            hint={t("sPercentHint")}
+            checked={s.showPercentText}
+            onChange={(v) => patch({ showPercentText: v })}
           />
-          <span className="unit">sn</span>
-        </Row>
-
-        <Row label="Kullanılabilir context" hint="autocompact payı düşülmüş">
-          <input
-            className="input input--num input--wide"
-            type="number"
-            min={10000}
-            step={5000}
-            value={s.usableContextTokens}
-            onChange={(e) => patch({ usableContextTokens: Number(e.target.value) })}
+          <Toggle
+            label={t("sAutostart")}
+            hint={t("sAutostartHint")}
+            checked={s.startWithWindows}
+            onChange={(v) => patch({ startWithWindows: v })}
           />
-          <span className="unit">token</span>
-        </Row>
+        </section>
 
-        <Row label="Tema">
-          <select className="input" value={s.theme} onChange={(e) => patch({ theme: e.target.value as Theme })}>
-            <option value="system">Sistem</option>
-            <option value="dark">Koyu</option>
-            <option value="light">Açık</option>
-          </select>
-        </Row>
-
-        <Toggle
-          label="Tepsi ikonunda yüzde yazısı"
-          hint="16px'te zor okunur"
-          checked={s.showPercentText}
-          onChange={(v) => patch({ showPercentText: v })}
-        />
-        <Toggle
-          label="Windows ile başlat"
-          checked={s.startWithWindows}
-          onChange={(v) => patch({ startWithWindows: v })}
-        />
-
-        <div className="settings__group">Bildirimler</div>
-        <Toggle
-          label="Bildirimler açık"
-          checked={s.notifications.enabled}
-          onChange={(v) => patchN({ enabled: v })}
-        />
-        <Row label="5 saatlik eşikler">
-          <div className="chips">
-            {FIVE_HOUR_OPTIONS.map((p) => (
-              <button
-                key={p}
-                className={`chip${s.notifications.fiveHour.includes(p) ? " chip--on" : ""}`}
-                disabled={!s.notifications.enabled}
-                onClick={() => patchN({ fiveHour: toggleIn(s.notifications.fiveHour, p) })}
-              >
-                %{p}
-              </button>
-            ))}
-          </div>
-        </Row>
-        <Row label="Haftalık eşikler">
-          <div className="chips">
-            {SEVEN_DAY_OPTIONS.map((p) => (
-              <button
-                key={p}
-                className={`chip${s.notifications.sevenDay.includes(p) ? " chip--on" : ""}`}
-                disabled={!s.notifications.enabled}
-                onClick={() => patchN({ sevenDay: toggleIn(s.notifications.sevenDay, p) })}
-              >
-                %{p}
-              </button>
-            ))}
-          </div>
-        </Row>
-        <Row label="Context uyarısı" hint="kalan token bunun altına inince">
-          <input
-            className="input input--num input--wide"
-            type="number"
-            min={0}
-            step={5000}
-            disabled={!s.notifications.enabled}
-            value={s.notifications.contextLowTokens}
-            onChange={(e) => patchN({ contextLowTokens: Number(e.target.value) })}
+        <div className="eyebrow eyebrow--group">{t("sNotifications")}</div>
+        <section className="row-card row-card--list">
+          <Toggle
+            label={t("sNotifEnabled")}
+            checked={s.notifications.enabled}
+            onChange={(v) => patchN({ enabled: v })}
           />
-          <span className="unit">token</span>
-        </Row>
+          <Row label={t("sFiveThresholds")}>
+            <div className="chips">
+              {FIVE_HOUR_OPTIONS.map((p) => (
+                <button
+                  key={p}
+                  className={`chip${s.notifications.fiveHour.includes(p) ? " chip--on" : ""}`}
+                  disabled={!s.notifications.enabled}
+                  onClick={() => patchN({ fiveHour: toggleIn(s.notifications.fiveHour, p) })}
+                >
+                  {pct(p)}
+                </button>
+              ))}
+            </div>
+          </Row>
+          <Row label={t("sWeekThresholds")}>
+            <div className="chips">
+              {SEVEN_DAY_OPTIONS.map((p) => (
+                <button
+                  key={p}
+                  className={`chip${s.notifications.sevenDay.includes(p) ? " chip--on" : ""}`}
+                  disabled={!s.notifications.enabled}
+                  onClick={() => patchN({ sevenDay: toggleIn(s.notifications.sevenDay, p) })}
+                >
+                  {pct(p)}
+                </button>
+              ))}
+            </div>
+          </Row>
+          <Row label={t("sContextLow")} hint={t("sContextLowHint")}>
+            <input
+              className="input input--num input--wide"
+              type="number"
+              min={0}
+              step={5000}
+              disabled={!s.notifications.enabled}
+              value={s.notifications.contextLowTokens}
+              onChange={(e) => patchN({ contextLowTokens: Number(e.target.value) })}
+            />
+            <span className="unit">{t("sToken")}</span>
+          </Row>
+        </section>
 
         <div className="settings__foot">
           <button className="link" onClick={() => invoke("open_logs_dir")}>
-            Log klasörünü aç
+            {t("sOpenLogs")}
           </button>
           <span className="settings__version">{version && `v${version}`}</span>
           <button className="link link--danger" onClick={() => invoke("quit_app")}>
-            Çıkış
+            {t("sQuit")}
           </button>
         </div>
       </div>
@@ -168,7 +195,7 @@ export default function SettingsView({ onBack, onSaved }: Props) {
   );
 }
 
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div className="row">
       <div className="row__label">

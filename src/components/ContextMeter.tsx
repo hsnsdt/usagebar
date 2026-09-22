@@ -1,5 +1,6 @@
 import UsageBar from "./UsageBar";
-import { projectLabel, toneFor, tokensK } from "../format";
+import { pct, projectLabel, toneFor, tokensK } from "../format";
+import { t } from "../i18n";
 import type { ContextSnap } from "../types";
 
 function modelShort(m: string | null): string | null {
@@ -18,8 +19,8 @@ export default function ContextMeter({ context }: { context: ContextSnap | null 
       <section className="row-card">
         <div className="row-card__head">
           <div className="row-card__text">
-            <div className="row-card__title">Context</div>
-            <div className="row-card__sub">Aktif oturum yok</div>
+            <div className="row-card__title">{t("context")}</div>
+            <div className="row-card__sub">{t("noSession")}</div>
           </div>
           <div className="row-card__value row-card__value--dim">—</div>
         </div>
@@ -33,25 +34,23 @@ export default function ContextMeter({ context }: { context: ContextSnap | null 
   const tone = toneFor(usedPct);
   const project = projectLabel(context.project);
   const model = modelShort(context.model);
-  const sub = [project, model].filter(Boolean).join(" · ") || "Aktif oturum";
+  const sub = [project, model].filter(Boolean).join(" · ") || t("activeSession");
   return (
     <section className="row-card">
       <div className="row-card__head">
         <div className="row-card__text">
-          <div className="row-card__title">Context</div>
+          <div className="row-card__title">{t("context")}</div>
           <div className="row-card__sub" title={context.project ?? undefined}>
             {sub}
           </div>
         </div>
         <div className="row-card__value">
           <span className={`tone-text-${tone}`}>{tokensK(remaining)}</span>
-          <span className="row-card__unit"> kaldı</span>
+          <span className="row-card__unit"> {t("left")}</span>
         </div>
       </div>
       <UsageBar value={usedPct} tone={tone} />
-      <div className="row-card__foot">
-        {tokensK(context.usable)} kullanılabilir · %{Math.round(usedPct)} dolu
-      </div>
+      <div className="row-card__foot">{t("contextFoot", { usable: tokensK(context.usable), pct: pct(usedPct) })}</div>
     </section>
   );
 }

@@ -13,7 +13,6 @@ use tauri_plugin_autostart::ManagerExt;
 use tiny_skia::{Color, LineCap, Paint, PathBuilder, Pixmap, PremultipliedColorU8, Stroke, Transform};
 
 use crate::state::{AppState, Snapshot, Status};
-use crate::util;
 
 pub const TRAY_ID: &str = "main";
 const ICON_SIZE: u32 = 32;
@@ -233,35 +232,62 @@ fn draw_text(pixmap: &mut Pixmap, text: &str, (r, g, b): (u8, u8, u8)) {
 
 // ------------------------------------------------------------- tray setup
 
-pub struct TrayState {
+pub struct TrayState<R: Runtime = tauri::Wry> {
     last_spec: Mutex<Option<IconSpec>>,
     last_tooltip: Mutex<String>,
     last_hidden: Mutex<Option<Instant>>,
     last_shown: Mutex<Option<Instant>>,
+    autostart_item: Mutex<Option<CheckMenuItem<R>>>,
 }
 
-impl Default for TrayState {
+impl<R: Runtime> Default for TrayState<R> {
     fn default() -> Self {
         Self {
             last_spec: Mutex::new(None),
             last_tooltip: Mutex::new(String::new()),
             last_hidden: Mutex::new(None),
             last_shown: Mutex::new(None),
+            autostart_item: Mutex::new(None),
         }
     }
 }
 
-pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-    let refresh = MenuItem::with_id(app, "refresh", "Yenile", true, None::<&str>)?;
-    let settings = MenuItem::with_id(app, "settings", "Ayarlar", true, None::<&str>)?;
+fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<(Menu<R>, CheckMenuItem<R>)> {
+    let st = app.state::<AppState>().settings().strings();
+    let refresh = MenuItem::with_id(app, "refresh", st.menu_refresh(), true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, "settings", st.menu_settings(), true, None::<&str>)?;
     let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
     let autostart =
-        CheckMenuItem::with_id(app, "autostart", "Başlangıçta çalıştır", true, autostart_on, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
+        CheckMenuItem::with_id(app, "autostart", st.menu_autostart(), true, autostart_on, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", st.menu_quit(), true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
         &[&refresh, &settings, &autostart, &PredefinedMenuItem::separator(app)?, &quit],
     )?;
+    Ok((menu, autostart))
+}
+
+/// Re-create the context menu (after a language change).
+pub fn rebuild_menu<R: Runtime>(app: &AppHandle<R>) {
+    let Some(tray) = app.tray_by_id(TRAY_ID) else { return };
+    match build_menu(app) {
+        Ok((menu, autostart)) => {
+            if let Ok(mut l) = app.state::<TrayState<R>>().autostart_item.lock() {
+                *l = Some(autostart);
+            }
+            if let Err(e) = tray.set_menu(Some(menu)) {
+                tracing::warn!("set_menu failed: {e}");
+            }
+        }
+        Err(e) => tracing::warn!("menu rebuild failed: {e}"),
+    }
+}
+
+pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    let (menu, autostart) = build_menu(app)?;
+    if let Ok(mut l) = app.state::<TrayState<R>>().autostart_item.lock() {
+        *l = Some(autostart);
+    }
 
     let initial = IconSpec { tone: Tone::Gray, fraction: None, percent_text: None };
     let rgba = render(&initial);
@@ -282,7 +308,13 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 let _ = app.emit("navigate", "settings");
             }
             "autostart" => {
-                let enabled = autostart.is_checked().unwrap_or(false);
+                let enabled = app
+                    .state::<TrayState<R>>()
+                    .autostart_item
+                    .lock()
+                    .ok()
+                    .and_then(|l| l.as_ref().and_then(|i| i.is_checked().ok()))
+                    .unwrap_or(false);
                 let res = if enabled { app.autolaunch().enable() } else { app.autolaunch().disable() };
                 if let Err(e) = res {
                     tracing::warn!("autostart toggle failed: {e}");
@@ -309,7 +341,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         })
         .build(app)?;
 
-    if let Some(mut lock) = app.state::<TrayState>().last_spec.lock().ok() {
+    if let Some(mut lock) = app.state::<TrayState<R>>().last_spec.lock().ok() {
         *lock = Some(initial);
     }
     Ok(())
@@ -318,7 +350,8 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 /// Push a new snapshot to the tray: icon (only if changed) and tooltip.
 pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text: bool) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else { return };
-    let tray_state = app.state::<TrayState>();
+    let tray_state = app.state::<TrayState<R>>();
+    let strings = app.state::<AppState>().settings().strings();
 
     let spec = IconSpec::from_snapshot(snap, show_percent_text);
     let changed = tray_state.last_spec.lock().map(|l| l.as_ref() != Some(&spec)).unwrap_or(true);
@@ -332,7 +365,7 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text:
         }
     }
 
-    let tooltip = tooltip_for(snap);
+    let tooltip = tooltip_for(snap, &strings);
     let tooltip_changed = tray_state.last_tooltip.lock().map(|l| *l != tooltip).unwrap_or(true);
     if tooltip_changed {
         let _ = tray.set_tooltip(Some(&tooltip));
@@ -342,29 +375,24 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text:
     }
 }
 
-pub fn tooltip_for(snap: &Snapshot) -> String {
+pub fn tooltip_for(snap: &Snapshot, st: &crate::i18n::Strings) -> String {
     let now = chrono::Utc::now();
     match snap.status {
-        Status::NoCredentials => return "UsageTray — Claude Code bulunamadı".into(),
-        Status::TokenExpired if snap.five_hour.is_none() => {
-            return "UsageTray — token süresi dolmuş".into()
-        }
-        Status::Error if snap.five_hour.is_none() => return "UsageTray — veri alınamadı".into(),
+        Status::NoCredentials => return st.tip_no_creds().into(),
+        Status::TokenExpired if snap.five_hour.is_none() => return st.tip_expired().into(),
+        Status::Error if snap.five_hour.is_none() => return st.tip_error().into(),
         _ => {}
     }
     let mut lines = Vec::new();
     if let Some(w) = &snap.five_hour {
-        let mut s = format!("5s: {}", util::percent_label(w.utilization));
-        if let Some(at) = w.resets_at_utc() {
-            s.push_str(&format!(" · {} sonra sıfırlanır", util::remaining_tr(at, now)));
-        }
-        lines.push(s);
+        let remaining = w.resets_at_utc().map(|at| st.remaining(at, now));
+        lines.push(st.tip_five(&st.percent(w.utilization), remaining));
     }
     if let Some(w) = &snap.seven_day {
-        lines.push(format!("Haftalık: {}", util::percent_label(w.utilization)));
+        lines.push(st.tip_week(&st.percent(w.utilization)));
     }
     if snap.stale {
-        lines.push("(bayat veri)".into());
+        lines.push(st.tip_stale().into());
     }
     if lines.is_empty() {
         "UsageTray".into()
@@ -399,14 +427,14 @@ pub fn hide_popup<R: Runtime>(app: &AppHandle<R>) {
     if let Some(win) = main_window(app) {
         let _ = win.hide();
     }
-    if let Ok(mut l) = app.state::<TrayState>().last_hidden.lock() {
+    if let Ok(mut l) = app.state::<TrayState<R>>().last_hidden.lock() {
         *l = Some(Instant::now());
     }
 }
 
 /// True while a just-shown popup should survive a focus loss.
 pub fn in_show_grace<R: Runtime>(app: &AppHandle<R>) -> bool {
-    app.state::<TrayState>()
+    app.state::<TrayState<R>>()
         .last_shown
         .lock()
         .ok()
@@ -416,7 +444,7 @@ pub fn in_show_grace<R: Runtime>(app: &AppHandle<R>) -> bool {
 
 /// Called from the window focus-loss handler.
 pub fn note_hidden<R: Runtime>(app: &AppHandle<R>) {
-    if let Ok(mut l) = app.state::<TrayState>().last_hidden.lock() {
+    if let Ok(mut l) = app.state::<TrayState<R>>().last_hidden.lock() {
         *l = Some(Instant::now());
     }
 }
@@ -427,7 +455,7 @@ pub fn show_popup<R: Runtime>(app: &AppHandle<R>) {
         return;
     };
     position_popup(&win);
-    if let Ok(mut l) = app.state::<TrayState>().last_shown.lock() {
+    if let Ok(mut l) = app.state::<TrayState<R>>().last_shown.lock() {
         *l = Some(Instant::now());
     }
     if let Err(e) = win.show() {

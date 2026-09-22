@@ -4,6 +4,7 @@ mod app;
 mod commands;
 mod config;
 mod credentials;
+mod i18n;
 mod logging;
 mod probe;
 mod settings;
@@ -12,7 +13,6 @@ mod toasts;
 mod transcripts;
 mod tray;
 mod usage_api;
-mod util;
 mod win;
 
 fn main() {

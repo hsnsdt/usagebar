@@ -35,6 +35,8 @@ pub struct Settings {
     pub start_with_windows: bool,
     /// "system" | "dark" | "light"
     pub theme: String,
+    /// "system" | "tr" | "en"
+    pub language: String,
     pub notifications: NotificationSettings,
 }
 
@@ -46,6 +48,7 @@ impl Default for Settings {
             usable_context_tokens: config::DEFAULT_USABLE_CONTEXT_TOKENS,
             start_with_windows: true,
             theme: "dark".into(),
+            language: "system".into(),
             notifications: NotificationSettings::default(),
         }
     }
@@ -61,6 +64,9 @@ impl Settings {
         if !matches!(self.theme.as_str(), "system" | "dark" | "light") {
             self.theme = "dark".into();
         }
+        if !matches!(self.language.as_str(), "system" | "tr" | "en") {
+            self.language = "system".into();
+        }
         let clamp = |v: Vec<u8>| -> Vec<u8> {
             let mut v: Vec<u8> = v.into_iter().filter(|p| (1..=100).contains(p)).collect();
             v.sort_unstable();
@@ -70,6 +76,10 @@ impl Settings {
         self.notifications.five_hour = clamp(self.notifications.five_hour);
         self.notifications.seven_day = clamp(self.notifications.seven_day);
         self
+    }
+
+    pub fn strings(&self) -> crate::i18n::Strings {
+        crate::i18n::Strings::new(&self.language)
     }
 
     /// Effective poll interval in seconds, always >= MIN_POLL_INTERVAL_SEC.
