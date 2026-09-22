@@ -1,0 +1,91 @@
+# Builds the NSIS installer on GitHub's own Windows runner from the tagged
+# source and publishes it as a GitHub Release together with its SHA256.
+#
+# Usage:  git tag v0.1.0 && git push origin v0.1.0
+# The tag must match "version" in src-tauri/tauri.conf.json.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches app version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $ver = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne $ver) { throw "tag v$tag does not match tauri.conf.json version $ver" }
+          "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: ver
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Rust tests
+        run: cargo test --locked
+
+      - name: Build installer
+        run: npm run tauri build -- --ci
+
+      - name: Collect artifacts and hashes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          $setup = Get-ChildItem target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Copy-Item $setup.FullName out/
+          Copy-Item target/release/usagetray.exe out/usagetray-${{ steps.ver.outputs.version }}-portable.exe
+          $lines = Get-ChildItem out/*.exe | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          }
+          $lines | Out-File -FilePath out/SHA256SUMS.txt -Encoding ascii
+          Get-Content out/SHA256SUMS.txt
+
+      - name: Release notes
+        shell: pwsh
+        run: |
+          $sums = Get-Content out/SHA256SUMS.txt -Raw
+          @"
+          Built by GitHub Actions from tag ``${{ github.ref_name }}`` (commit ``${{ github.sha }}``).
+
+          **Files**
+          - ``*-setup.exe``: NSIS installer (per-user, no admin). Windows SmartScreen will warn because the binary is not code-signed; choose *More info → Run anyway*.
+          - ``*-portable.exe``: the bare executable, no installer, no autostart entry.
+
+          **SHA256**
+          ``````
+          $sums
+          ``````
+
+          Verify on Windows: ``Get-FileHash .\UsageTray_*-setup.exe -Algorithm SHA256``
+
+          Privacy: the OAuth token is sent only to ``api.anthropic.com``; ``.credentials.json`` is opened read-only; no telemetry. See the README.
+          "@ | Out-File -FilePath out/NOTES.md -Encoding utf8
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: UsageTray ${{ github.ref_name }}
+          body_path: out/NOTES.md
+          files: |
+            out/*.exe
+            out/SHA256SUMS.txt

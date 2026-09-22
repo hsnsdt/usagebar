@@ -18,7 +18,7 @@ The Windows counterpart of Usagebar on macOS.
 
 ## Install
 
-1. Download `UsageTray_x.y.z_x64-setup.exe` from Releases and run it. Per-user install, no admin rights needed.
+1. Download `UsageTray_x.y.z_x64-setup.exe` from Releases and run it. Per-user install, no admin rights needed. Installers are built by GitHub Actions from the tagged source; each release lists SHA256 hashes and there is also a portable `.exe` without installer or autostart.
 2. You must have run `claude` in a terminal and signed in at least once. UsageTray reads Claude Code's own session; it never asks you to sign in.
 3. If the WebView2 runtime is missing it is downloaded during setup. Windows 11 already has it.
 
@@ -37,6 +37,13 @@ Being suspicious of an app that reads your OAuth token is the right instinct. So
 - Everything stays local under `%APPDATA%\UsageTray\` (settings, cache, scan state, notification state, logs).
 
 The code is small and readable; if in doubt, look at `src-tauri/src/usage_api.rs` and `credentials.rs`.
+
+Verify it yourself:
+
+- Releases are built by the public [release workflow](.github/workflows/release.yml) on GitHub's runners, not on a developer machine. Compare the SHA256 in the release notes with `Get-FileHash`.
+- `cargo run -- --probe` prints exactly which file is read and the raw API response.
+- Watch the traffic with Fiddler or Wireshark: the only host is `api.anthropic.com`.
+- The installer is not code-signed, so SmartScreen shows a warning on first run. That is about the missing certificate, not about the content.
 
 ## Data sources
 

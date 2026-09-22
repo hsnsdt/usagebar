@@ -18,7 +18,7 @@ macOS'taki Usagebar'ın Windows muadili.
 
 ## Kurulum
 
-1. Releases sayfasından `UsageTray_x.y.z_x64-setup.exe` dosyasını indir ve çalıştır. Kullanıcı bazlı kurulum, yönetici gerekmez.
+1. Releases sayfasından `UsageTray_x.y.z_x64-setup.exe` dosyasını indir ve çalıştır. Kullanıcı bazlı kurulum, yönetici gerekmez. Installer'lar GitHub Actions'ta, tag'lenmiş kaynaktan derlenir; her release'te SHA256 hash'leri ve installer'sız, autostart'sız portable `.exe` de var.
 2. Terminalde en az bir kez `claude` çalıştırıp giriş yapmış olman gerekir. Uygulama Claude Code'un kendi oturumunu okur, ayrı bir giriş istemez.
 3. WebView2 runtime yoksa kurulum sırasında otomatik indirilir. Windows 11'de zaten vardır.
 
@@ -37,6 +37,13 @@ Bir uygulamanın OAuth token'ını okumasına şüpheyle yaklaşmak doğru. Bu y
 - Tüm veriler yerelde: `%APPDATA%\UsageTray\` (ayarlar, cache, tarama durumu, bildirim durumu, loglar).
 
 Kod küçük ve okunabilir; şüphen varsa `src-tauri/src/usage_api.rs` ve `credentials.rs` dosyalarına bak.
+
+Kendin doğrula:
+
+- Release'ler geliştirici makinesinde değil, herkese açık [release workflow](.github/workflows/release.yml) ile GitHub'ın makinelerinde derlenir. Release notlarındaki SHA256'yı `Get-FileHash` ile karşılaştır.
+- `cargo run -- --probe` hangi dosyanın okunduğunu ve ham API cevabını basar.
+- Fiddler veya Wireshark ile trafiği izle: tek adres `api.anthropic.com`.
+- Installer kod imzalı değil, o yüzden SmartScreen ilk çalıştırmada uyarı verir. Bu eksik sertifikayla ilgili, içerikle değil.
 
 ## Veri kaynakları
 
