@@ -6,7 +6,7 @@ import { t, useLang } from "../i18n";
 
 export const APP = {
   name: "UsageTray",
-  author: "Hüsnü Sedat Okutan",
+  author: "Sedat Okutan",
   email: "sedat@okutan.org",
   github: "https://github.com/hsnsdt/usagebar",
   issues: "https://github.com/hsnsdt/usagebar/issues",

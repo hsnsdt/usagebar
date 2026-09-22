@@ -2,7 +2,7 @@
 name = "usagetray"
 version = "0.1.1"
 description = "Windows tray app that shows Claude Code usage limits"
-authors = ["Hüsnü Sedat Okutan <sedat@okutan.org>"]
+authors = ["Sedat Okutan <sedat@okutan.org>"]
 edition = "2021"
 rust-version = "1.80"
 

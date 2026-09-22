@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.1",
   "type": "module",
-  "author": "Hüsnü Sedat Okutan <sedat@okutan.org>",
+  "author": "Sedat Okutan <sedat@okutan.org>",
   "license": "MIT",
   "repository": "github:hsnsdt/usagebar",
   "scripts": {

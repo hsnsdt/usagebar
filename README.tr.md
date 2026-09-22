@@ -104,6 +104,6 @@ Stack: Tauri v2, Rust, React 19, Vite. İkon tiny-skia ile runtime'da çizilir. 
 
 ## Lisans
 
-Geliştiren: Hüsnü Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org).
+Geliştiren: Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org).
 
 MIT. Gömülü Inter fontu SIL Open Font License (`src-tauri/assets/Inter-LICENSE.txt`).

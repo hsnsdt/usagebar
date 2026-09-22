@@ -33,8 +33,8 @@
   },
   "bundle": {
     "active": true,
-    "publisher": "Hüsnü Sedat Okutan",
-    "copyright": "© 2026 Hüsnü Sedat Okutan · MIT",
+    "publisher": "Sedat Okutan",
+    "copyright": "© 2026 Sedat Okutan · MIT",
     "homepage": "https://github.com/hsnsdt/usagebar",
     "targets": ["nsis"],
     "icon": [

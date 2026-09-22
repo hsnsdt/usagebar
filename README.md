@@ -104,6 +104,6 @@ Stack: Tauri v2, Rust, React 19, Vite. The icon is drawn at runtime with tiny-sk
 
 ## License
 
-Developed by Hüsnü Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org).
+Developed by Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org).
 
 MIT. The bundled Inter font is under the SIL Open Font License (`src-tauri/assets/Inter-LICENSE.txt`).
