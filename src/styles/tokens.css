@@ -1,0 +1,83 @@
+/* Design tokens. Dark is the default; "system" and "light" are opt-in from settings. */
+
+:root {
+  --font: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
+  --mono: "Cascadia Code", Consolas, monospace;
+
+  --bg-top: #1a1a1f;
+  --bg-bottom: #0e0e11;
+  --bg: #121215;
+  --edge: rgba(255, 255, 255, 0.1);
+  --card: rgba(255, 255, 255, 0.045);
+  --card-edge: rgba(255, 255, 255, 0.06);
+  --rule: rgba(255, 255, 255, 0.06);
+  --track: rgba(255, 255, 255, 0.09);
+  --fg: #f4f4f6;
+  --fg-2: #a0a0a8;
+  --fg-3: #6e6e77;
+  --chip: rgba(255, 255, 255, 0.07);
+  --chip-on: rgba(255, 255, 255, 0.16);
+  --hover: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.05);
+
+  --green: #4ade80;
+  --yellow: #facc15;
+  --orange: #fb923c;
+  --red: #f87171;
+  --gray: #8b8b93;
+
+  --glow-alpha: 22%;
+  --radius: 18px;
+  --card-radius: 13px;
+  --pad: 14px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    --bg-top: #fbfbfc;
+    --bg-bottom: #eeeef1;
+    --bg: #f4f4f6;
+    --edge: rgba(0, 0, 0, 0.1);
+    --card: rgba(255, 255, 255, 0.85);
+    --card-edge: rgba(0, 0, 0, 0.07);
+    --rule: rgba(0, 0, 0, 0.07);
+    --track: rgba(0, 0, 0, 0.09);
+    --fg: #16161a;
+    --fg-2: #5a5a64;
+    --fg-3: #8c8c95;
+    --chip: rgba(0, 0, 0, 0.05);
+    --chip-on: rgba(0, 0, 0, 0.12);
+    --hover: rgba(0, 0, 0, 0.06);
+    --input-bg: rgba(0, 0, 0, 0.04);
+    --green: #16a34a;
+    --yellow: #ca8a04;
+    --orange: #ea580c;
+    --red: #dc2626;
+    --gray: #6b7280;
+    --glow-alpha: 14%;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg-top: #fbfbfc;
+  --bg-bottom: #eeeef1;
+  --bg: #f4f4f6;
+  --edge: rgba(0, 0, 0, 0.1);
+  --card: rgba(255, 255, 255, 0.85);
+  --card-edge: rgba(0, 0, 0, 0.07);
+  --rule: rgba(0, 0, 0, 0.07);
+  --track: rgba(0, 0, 0, 0.09);
+  --fg: #16161a;
+  --fg-2: #5a5a64;
+  --fg-3: #8c8c95;
+  --chip: rgba(0, 0, 0, 0.05);
+  --chip-on: rgba(0, 0, 0, 0.12);
+  --hover: rgba(0, 0, 0, 0.06);
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --green: #16a34a;
+  --yellow: #ca8a04;
+  --orange: #ea580c;
+  --red: #dc2626;
+  --gray: #6b7280;
+  --glow-alpha: 14%;
+}
