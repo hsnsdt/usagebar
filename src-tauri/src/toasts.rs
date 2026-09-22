@@ -181,7 +181,8 @@ mod tests {
 
     #[test]
     fn fires_once_per_threshold_and_resets_on_new_window() {
-        let settings = Settings::default();
+        // Pin the language: CI runners are English and would render "50%".
+        let settings = Settings { language: "tr".into(), ..Settings::default() };
         let mut st = ToastState::default();
         assert!(evaluate(&mut st, &snap(40.0, "A"), &settings, None).is_empty());
         let t = evaluate(&mut st, &snap(55.0, "A"), &settings, None);
