@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, Runtime, WebviewWindo
 use tauri_plugin_autostart::ManagerExt;
 use tiny_skia::{Color, LineCap, Paint, PathBuilder, Pixmap, PremultipliedColorU8, Stroke, Transform};
 
+use crate::settings::Settings;
 use crate::state::{AppState, Snapshot, Status};
 
 pub const TRAY_ID: &str = "main";
@@ -76,14 +77,17 @@ pub struct IconSpec {
 }
 
 impl IconSpec {
-    pub fn from_snapshot(snap: &Snapshot, show_percent_text: bool) -> IconSpec {
+    /// The ring always fills with usage; `show_remaining` only flips the
+    /// number drawn inside it.
+    pub fn from_snapshot(snap: &Snapshot, show_percent_text: bool, show_remaining: bool) -> IconSpec {
         let usable = matches!(snap.status, Status::Ok | Status::RateLimited | Status::Offline)
             || (snap.status == Status::TokenExpired && snap.five_hour.is_some());
         match (&snap.five_hour, usable) {
             (Some(w), true) => {
                 let pct = w.utilization.clamp(0.0, 100.0);
                 let text = show_percent_text.then(|| {
-                    let p = pct.round() as u32;
+                    let shown = if show_remaining { 100.0 - pct } else { pct };
+                    let p = shown.round() as u32;
                     if p >= 100 {
                         "99+".to_string()
                     } else {
@@ -348,12 +352,12 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 }
 
 /// Push a new snapshot to the tray: icon (only if changed) and tooltip.
-pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text: bool) {
+pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, settings: &Settings) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else { return };
     let tray_state = app.state::<TrayState<R>>();
-    let strings = app.state::<AppState>().settings().strings();
+    let strings = settings.strings();
 
-    let spec = IconSpec::from_snapshot(snap, show_percent_text);
+    let spec = IconSpec::from_snapshot(snap, settings.show_percent_text, settings.show_remaining);
     let changed = tray_state.last_spec.lock().map(|l| l.as_ref() != Some(&spec)).unwrap_or(true);
     if changed {
         let rgba = render(&spec);
@@ -365,7 +369,7 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text:
         }
     }
 
-    let tooltip = tooltip_for(snap, &strings);
+    let tooltip = tooltip_for(snap, &strings, settings.show_remaining);
     let tooltip_changed = tray_state.last_tooltip.lock().map(|l| *l != tooltip).unwrap_or(true);
     if tooltip_changed {
         let _ = tray.set_tooltip(Some(&tooltip));
@@ -375,7 +379,7 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, snap: &Snapshot, show_percent_text:
     }
 }
 
-pub fn tooltip_for(snap: &Snapshot, st: &crate::i18n::Strings) -> String {
+pub fn tooltip_for(snap: &Snapshot, st: &crate::i18n::Strings, show_remaining: bool) -> String {
     let now = chrono::Utc::now();
     match snap.status {
         Status::NoCredentials => return st.tip_no_creds().into(),
@@ -383,13 +387,23 @@ pub fn tooltip_for(snap: &Snapshot, st: &crate::i18n::Strings) -> String {
         Status::Error if snap.five_hour.is_none() => return st.tip_error().into(),
         _ => {}
     }
+    let pct = |used: f64| {
+        if show_remaining {
+            format!("{}{}", st.percent((100.0 - used).max(0.0)), st.left_suffix())
+        } else {
+            st.percent(used)
+        }
+    };
     let mut lines = Vec::new();
     if let Some(w) = &snap.five_hour {
         let remaining = w.resets_at_utc().map(|at| st.remaining(at, now));
-        lines.push(st.tip_five(&st.percent(w.utilization), remaining));
+        lines.push(st.tip_five(&pct(w.utilization), remaining));
     }
     if let Some(w) = &snap.seven_day {
-        lines.push(st.tip_week(&st.percent(w.utilization)));
+        lines.push(st.tip_week(&pct(w.utilization)));
+    }
+    for l in &snap.scoped {
+        lines.push(st.tip_scoped(&l.label, &pct(l.utilization)));
     }
     if snap.stale {
         lines.push(st.tip_stale().into());

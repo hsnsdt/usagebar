@@ -413,6 +413,39 @@ select {
   opacity: 0.55;
 }
 
+/* model-specific weekly limits inside the weekly card */
+.scoped {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--card-edge);
+}
+.scoped__line {
+  display: grid;
+  grid-template-columns: minmax(56px, auto) 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.scoped__label {
+  color: var(--fg-2);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+.scoped__line .bar {
+  height: 4px;
+}
+.scoped__value {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .tone-text-green {
   color: var(--green);
 }

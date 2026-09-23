@@ -13,6 +13,8 @@ pub struct NotificationSettings {
     pub five_hour: Vec<u8>,
     pub seven_day: Vec<u8>,
     pub context_low_tokens: u64,
+    /// Toast when a 5-hour window that reached the lowest threshold resets.
+    pub on_reset: bool,
 }
 
 impl Default for NotificationSettings {
@@ -22,6 +24,7 @@ impl Default for NotificationSettings {
             five_hour: vec![50, 75, 90],
             seven_day: vec![80, 95],
             context_low_tokens: 20_000,
+            on_reset: true,
         }
     }
 }
@@ -31,6 +34,10 @@ impl Default for NotificationSettings {
 pub struct Settings {
     pub poll_interval_sec: u64,
     pub show_percent_text: bool,
+    /// Show what is left (100 - used) instead of what is used.
+    pub show_remaining: bool,
+    /// "system" | "24h" | "12h"
+    pub time_format: String,
     pub usable_context_tokens: u64,
     /// Derive the usable context from the session's model instead of using
     /// `usable_context_tokens`.
@@ -48,6 +55,8 @@ impl Default for Settings {
         Self {
             poll_interval_sec: config::DEFAULT_POLL_INTERVAL_SEC,
             show_percent_text: false,
+            show_remaining: false,
+            time_format: "system".into(),
             usable_context_tokens: config::DEFAULT_USABLE_CONTEXT_TOKENS,
             auto_context_window: true,
             start_with_windows: true,
@@ -71,6 +80,9 @@ impl Settings {
         if !matches!(self.language.as_str(), "system" | "tr" | "en") {
             self.language = "system".into();
         }
+        if !matches!(self.time_format.as_str(), "system" | "24h" | "12h") {
+            self.time_format = "system".into();
+        }
         let clamp = |v: Vec<u8>| -> Vec<u8> {
             let mut v: Vec<u8> = v.into_iter().filter(|p| (1..=100).contains(p)).collect();
             v.sort_unstable();
@@ -83,7 +95,7 @@ impl Settings {
     }
 
     pub fn strings(&self) -> crate::i18n::Strings {
-        crate::i18n::Strings::new(&self.language)
+        crate::i18n::Strings::new(&self.language, &self.time_format)
     }
 
     /// Effective poll interval in seconds, always >= MIN_POLL_INTERVAL_SEC.
@@ -130,6 +142,9 @@ mod tests {
         assert!(s.show_percent_text);
         assert_eq!(s.poll_interval_sec, 300);
         assert_eq!(s.notifications.five_hour, vec![50, 75, 90]);
+        assert!(s.notifications.on_reset);
+        assert!(!s.show_remaining);
+        assert_eq!(s.time_format, "system");
     }
 
     #[test]

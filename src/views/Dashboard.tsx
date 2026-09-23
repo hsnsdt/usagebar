@@ -5,10 +5,22 @@ import Ring from "../components/Ring";
 import StatusBanner from "../components/StatusBanner";
 import UsageBar from "../components/UsageBar";
 import WeekCard from "../components/WeekCard";
-import { agoTr, isNow, localClockTr, parseDate, pct, remainingTr, toneFor, whenLabel } from "../format";
+import {
+  agoTr,
+  isNow,
+  isShowingRemaining,
+  localClockTr,
+  money,
+  parseDate,
+  pct,
+  remainingTr,
+  shown,
+  toneFor,
+  whenLabel,
+} from "../format";
 import { refreshNow } from "../hooks/useUsage";
 import { t, useLang } from "../i18n";
-import type { Snapshot, WindowSnap } from "../types";
+import type { ScopedSnap, Snapshot, SpendSnap, WindowSnap } from "../types";
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -55,7 +67,8 @@ export default function Dashboard({ snapshot, now, onOpenSettings }: Props) {
         {!apiDataHidden && (
           <>
             <Hero window={snapshot.fiveHour} now={now} stale={snapshot.stale} />
-            <WeeklyRow window={snapshot.sevenDay} now={now} stale={snapshot.stale} />
+            <WeeklyRow window={snapshot.sevenDay} scoped={snapshot.scoped ?? []} now={now} stale={snapshot.stale} />
+            {snapshot.spend && <SpendRow spend={snapshot.spend} stale={snapshot.stale} />}
           </>
         )}
         <ContextMeter context={snapshot.context} />
@@ -148,11 +161,14 @@ function Hero({ window: w, now, stale }: { window: WindowSnap | null; now: Date;
   return (
     <section className="hero" style={{ "--tone": `var(--${tone})` } as CSSProperties}>
       <Ring size={112} stroke={11} value={w.utilization} tone={tone} marker={expected} muted={stale}>
-        <span className={`ring__pct tone-text-${tone}`}>{Math.round(w.utilization)}</span>
+        <span className={`ring__pct tone-text-${tone}`}>{Math.round(shown(w.utilization))}</span>
         <span className="ring__unit">%</span>
       </Ring>
       <div className="hero__text">
-        <div className="eyebrow">{t("fiveHourWindow")}</div>
+        <div className="eyebrow">
+          {t("fiveHourWindow")}
+          {isShowingRemaining() && ` · ${t("leftTag")}`}
+        </div>
         {remaining && resetsAt ? (
           <>
             <div className="hero__big">{isNow(remaining) ? t("resetting") : remaining}</div>
@@ -176,7 +192,9 @@ function Hero({ window: w, now, stale }: { window: WindowSnap | null; now: Date;
 
 // ------------------------------------------------------------------ weekly
 
-function WeeklyRow({ window: w, now, stale }: { window: WindowSnap | null; now: Date; stale: boolean }) {
+type WeeklyProps = { window: WindowSnap | null; scoped: ScopedSnap[]; now: Date; stale: boolean };
+
+function WeeklyRow({ window: w, scoped, now, stale }: WeeklyProps) {
   if (!w) {
     return (
       <section className="row-card">
@@ -204,9 +222,54 @@ function WeeklyRow({ window: w, now, stale }: { window: WindowSnap | null; now: 
           <div className="row-card__title">{t("weekly")}</div>
           <div className="row-card__sub">{sub}</div>
         </div>
-        <div className={`row-card__value tone-text-${tone}`}>{pct(w.utilization)}</div>
+        <div className={`row-card__value tone-text-${tone}`}>
+          {pct(shown(w.utilization))}
+          {isShowingRemaining() && <span className="row-card__unit"> {t("leftTag")}</span>}
+        </div>
       </div>
       <UsageBar value={w.utilization} tone={tone} marker={expected} muted={stale} />
+      {scoped.length > 0 && (
+        <div className="scoped" aria-label={t("modelLimits")}>
+          {scoped.map((l) => (
+            <ScopedLine key={l.label} limit={l} now={now} stale={stale} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ScopedLine({ limit: l, now, stale }: { limit: ScopedSnap; now: Date; stale: boolean }) {
+  const tone = toneFor(l.utilization);
+  const resetsAt = parseDate(l.resetsAt);
+  const title = resetsAt
+    ? t("weeklyResets", { clock: localClockTr(resetsAt), remaining: remainingTr(resetsAt, now) })
+    : undefined;
+  return (
+    <div className="scoped__line" title={title}>
+      <span className="scoped__label">{l.label}</span>
+      <UsageBar value={l.utilization} tone={tone} muted={stale} />
+      <span className={`scoped__value tone-text-${tone}`}>{pct(shown(l.utilization))}</span>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ extra usage
+
+function SpendRow({ spend: s, stale }: { spend: SpendSnap; stale: boolean }) {
+  const percent = s.percent ?? (s.limit ? (s.used / s.limit) * 100 : null);
+  const tone = percent == null ? "gray" : toneFor(percent);
+  const sub = s.limit != null ? t("extraOf", { limit: money(s.limit, s.currency) }) : t("extraNoLimit");
+  return (
+    <section className="row-card">
+      <div className="row-card__head">
+        <div className="row-card__text">
+          <div className="row-card__title">{t("extraUsage")}</div>
+          <div className="row-card__sub">{sub}</div>
+        </div>
+        <div className="row-card__value">{money(s.used, s.currency)}</div>
+      </div>
+      {percent != null && <UsageBar value={percent} tone={tone} muted={stale} />}
     </section>
   );
 }

@@ -39,6 +39,28 @@ impl UsageWindow {
 pub struct UsageResponse {
     pub five_hour: Option<UsageWindow>,
     pub seven_day: Option<UsageWindow>,
+    /// Newer list format (`session`, `weekly_all`, `weekly_scoped`). Kept raw
+    /// and read with `scoped_limits()` so one odd entry never fails the parse.
+    pub limits: Option<Value>,
+    /// Extra-usage spend in minor currency units.
+    pub spend: Option<Value>,
+}
+
+/// A weekly limit that applies to one model or surface only (e.g. Fable).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScopedLimit {
+    pub label: String,
+    pub utilization: f64,
+    pub resets_at: Option<String>,
+}
+
+/// Extra usage (pay-as-you-go credits past the plan limits).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Spend {
+    pub used: f64,
+    pub limit: Option<f64>,
+    pub currency: String,
+    pub percent: Option<f64>,
 }
 
 impl UsageResponse {
@@ -46,6 +68,52 @@ impl UsageResponse {
     pub fn has_data(&self) -> bool {
         self.five_hour.as_ref().is_some_and(UsageWindow::is_usable)
             || self.seven_day.as_ref().is_some_and(UsageWindow::is_usable)
+    }
+
+    /// `weekly_scoped` entries of `limits[]`, in API order. Entries without a
+    /// usable percent or name are skipped.
+    pub fn scoped_limits(&self) -> Vec<ScopedLimit> {
+        let Some(list) = self.limits.as_ref().and_then(Value::as_array) else { return Vec::new() };
+        list.iter()
+            .filter(|l| l.get("kind").and_then(Value::as_str) == Some("weekly_scoped"))
+            .filter_map(|l| {
+                let utilization = l.get("percent").and_then(Value::as_f64)?;
+                let scope = l.get("scope")?;
+                let label = ["model", "surface"]
+                    .iter()
+                    .filter_map(|k| scope.get(*k))
+                    .find_map(|v| match v {
+                        Value::String(s) => Some(s.clone()),
+                        Value::Object(o) => o.get("display_name").and_then(Value::as_str).map(str::to_string),
+                        _ => None,
+                    })
+                    .filter(|s| !s.trim().is_empty())?;
+                let resets_at = l.get("resets_at").and_then(Value::as_str).map(str::to_string);
+                Some(ScopedLimit { label, utilization, resets_at })
+            })
+            .collect()
+    }
+
+    /// Extra usage, only when the account has it switched on.
+    pub fn spend(&self) -> Option<Spend> {
+        let s = self.spend.as_ref()?;
+        if s.get("enabled").and_then(Value::as_bool) != Some(true) {
+            return None;
+        }
+        let money = |v: Option<&Value>| -> Option<(f64, String)> {
+            let v = v?;
+            let minor = v.get("amount_minor").and_then(Value::as_f64)?;
+            let exp = v.get("exponent").and_then(Value::as_i64).unwrap_or(2).clamp(0, 6) as i32;
+            let cur = v.get("currency").and_then(Value::as_str).unwrap_or("USD").to_string();
+            Some((minor / 10f64.powi(exp), cur))
+        };
+        let (used, currency) = money(s.get("used"))?;
+        Some(Spend {
+            used,
+            limit: money(s.get("limit")).map(|(v, _)| v),
+            currency,
+            percent: s.get("percent").and_then(Value::as_f64),
+        })
     }
 
     pub fn from_value(v: &Value) -> Result<Self, FetchError> {
@@ -202,6 +270,50 @@ mod tests {
         let r = UsageResponse::from_value(&v).unwrap();
         assert_eq!(r.five_hour.as_ref().unwrap().utilization, Some(33.0));
         assert!(r.seven_day.as_ref().unwrap().resets_at_utc().is_some());
+        assert!(r.scoped_limits().is_empty());
+        assert!(r.spend().is_none());
+    }
+
+    #[test]
+    fn reads_scoped_limits_and_spend() {
+        let v: Value = serde_json::json!({
+            "five_hour": {"utilization": 1.0, "resets_at": "2026-09-23T18:30:00Z"},
+            "limits": [
+                {"kind": "session", "percent": 1, "scope": null},
+                {"kind": "weekly_all", "percent": 4, "scope": null},
+                {"kind": "weekly_scoped", "percent": 7, "resets_at": "2026-09-29T16:00:00Z",
+                 "scope": {"model": {"display_name": "Fable", "id": null}, "surface": null}},
+                {"kind": "weekly_scoped", "percent": 12, "scope": {"model": null, "surface": "Design"}},
+                {"kind": "weekly_scoped", "percent": "x", "scope": {"model": {"display_name": "Bad"}}},
+                {"kind": "weekly_scoped", "percent": 3, "scope": null}
+            ],
+            "spend": {"enabled": true, "percent": 61.5,
+                      "used": {"amount_minor": 1538, "currency": "EUR", "exponent": 2},
+                      "limit": {"amount_minor": 2500, "currency": "EUR", "exponent": 2}}
+        });
+        let r = UsageResponse::from_value(&v).unwrap();
+        let s = r.scoped_limits();
+        assert_eq!(s.len(), 2);
+        assert_eq!(s[0].label, "Fable");
+        assert_eq!(s[0].utilization, 7.0);
+        assert!(s[0].resets_at.is_some());
+        assert_eq!(s[1].label, "Design");
+        let sp = r.spend().unwrap();
+        assert!((sp.used - 15.38).abs() < 1e-9);
+        assert_eq!(sp.limit, Some(25.0));
+        assert_eq!(sp.currency, "EUR");
+    }
+
+    #[test]
+    fn disabled_spend_is_hidden() {
+        let v: Value = serde_json::json!({
+            "five_hour": {"utilization": 1.0},
+            "limits": null,
+            "spend": {"enabled": false, "used": {"amount_minor": 0, "currency": "USD", "exponent": 2}}
+        });
+        let r = UsageResponse::from_value(&v).unwrap();
+        assert!(r.spend().is_none());
+        assert!(r.scoped_limits().is_empty());
     }
 
     #[test]

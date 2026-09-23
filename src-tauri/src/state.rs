@@ -22,6 +22,13 @@ pub const EVENT_USAGE_UPDATED: &str = "usage-updated";
 /// Minimum spacing between two real HTTP requests, even for manual refresh.
 const MANUAL_REFRESH_MIN_GAP: Duration = Duration::from_secs(60);
 
+/// The poll loop sleeps in slices of this length to notice a wake from sleep.
+const WAKE_CHECK_SLICE: Duration = Duration::from_secs(30);
+/// A slice that took this much longer than planned means the PC was asleep.
+const WAKE_GAP_TOLERANCE: Duration = Duration::from_secs(60);
+/// Wait after wake before polling, so the network is back.
+const WAKE_SETTLE: Duration = Duration::from_secs(10);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Status {
@@ -54,6 +61,25 @@ impl WindowSnap {
             resets_at: w.resets_at_utc().map(|d| d.to_rfc3339()),
         })
     }
+}
+
+/// A weekly limit that only counts one model or surface (e.g. Fable).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScopedSnap {
+    pub label: String,
+    pub utilization: f64,
+    pub resets_at: Option<String>,
+}
+
+/// Extra usage spend, in major currency units.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SpendSnap {
+    pub used: f64,
+    pub limit: Option<f64>,
+    pub currency: String,
+    pub percent: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -91,6 +117,10 @@ pub struct Snapshot {
     pub plan: Option<String>,
     pub five_hour: Option<WindowSnap>,
     pub seven_day: Option<WindowSnap>,
+    /// Model/surface specific weekly limits, API order.
+    pub scoped: Vec<ScopedSnap>,
+    /// Only present when extra usage is switched on for the account.
+    pub spend: Option<SpendSnap>,
     pub context: Option<ContextSnap>,
     pub today: TodaySnap,
     /// Last 7 local days, oldest first, today last. Empty before the first scan.
@@ -111,6 +141,8 @@ impl Snapshot {
             plan: None,
             five_hour: None,
             seven_day: None,
+            scoped: Vec::new(),
+            spend: None,
             context: None,
             today: TodaySnap::default(),
             week: Vec::new(),
@@ -125,6 +157,23 @@ impl Snapshot {
     fn apply_response(&mut self, resp: &UsageResponse, fetched_at: DateTime<Utc>) {
         self.five_hour = resp.five_hour.as_ref().and_then(WindowSnap::from_api);
         self.seven_day = resp.seven_day.as_ref().and_then(WindowSnap::from_api);
+        self.scoped = resp
+            .scoped_limits()
+            .into_iter()
+            .map(|l| ScopedSnap {
+                resets_at: usage_api::UsageWindow { utilization: None, resets_at: l.resets_at }
+                    .resets_at_utc()
+                    .map(|d| d.to_rfc3339()),
+                label: l.label,
+                utilization: l.utilization,
+            })
+            .collect();
+        self.spend = resp.spend().map(|s| SpendSnap {
+            used: s.used,
+            limit: s.limit,
+            currency: s.currency,
+            percent: s.percent,
+        });
         self.last_updated = Some(fetched_at.to_rfc3339());
     }
 }
@@ -245,8 +294,7 @@ impl AppState {
 pub fn publish<R: Runtime>(app: &AppHandle<R>) {
     let state = app.state::<AppState>();
     let snap = state.snapshot();
-    let show_pct = state.settings().show_percent_text;
-    tray::apply(app, &snap, show_pct);
+    tray::apply(app, &snap, &state.settings());
     if let Err(e) = app.emit(EVENT_USAGE_UPDATED, &snap) {
         tracing::warn!("emit failed: {e}");
     }
@@ -269,15 +317,44 @@ pub fn spawn_poll_loop<R: Runtime>(app: AppHandle<R>) {
 
         loop {
             let wait = poll_once(&app, &client).await;
-            let state = app.state::<AppState>();
-            tokio::select! {
-                _ = tokio::time::sleep(wait) => {}
-                _ = state.refresh.notified() => {
-                    tracing::info!("manual refresh requested");
-                }
-            }
+            wait_for_next(&app, wait).await;
         }
     });
+}
+
+/// Sleep until `wait` has passed on the wall clock or a manual refresh
+/// arrives. Sleeps in short slices because a monotonic timer may not count
+/// the time the PC spent suspended; after a wake the next poll is pulled
+/// forward, but never closer than the minimum interval to the last one.
+async fn wait_for_next<R: Runtime>(app: &AppHandle<R>, wait: Duration) {
+    let state = app.state::<AppState>();
+    let start = Utc::now();
+    let mut deadline = start + chrono::Duration::from_std(wait).unwrap_or_default();
+    let floor = start + chrono::Duration::seconds(config::MIN_POLL_INTERVAL_SEC as i64);
+    loop {
+        let before = Utc::now();
+        if before >= deadline {
+            return;
+        }
+        let slice = (deadline - before).to_std().unwrap_or_default().min(WAKE_CHECK_SLICE);
+        tokio::select! {
+            _ = tokio::time::sleep(slice) => {}
+            _ = state.refresh.notified() => {
+                tracing::info!("manual refresh requested");
+                return;
+            }
+        }
+        let after = Utc::now();
+        let gap = (after - before).to_std().unwrap_or_default();
+        if gap > slice + WAKE_GAP_TOLERANCE {
+            // Give Wi-Fi a moment to come back before polling.
+            let early = (after + chrono::Duration::from_std(WAKE_SETTLE).unwrap_or_default()).max(floor);
+            if early < deadline {
+                tracing::info!("resumed after ~{}s asleep; polling early", gap.as_secs());
+                deadline = early;
+            }
+        }
+    }
 }
 
 /// One iteration. Returns how long to wait before the next one.
@@ -358,6 +435,9 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
                 tracing::warn!("unauthorized ({code})");
             }
             Err(e) if e.is_offline() => {
+                // The request never reached the API: retry at the floor
+                // interval so data comes back soon after the network does.
+                wait = Duration::from_secs(config::MIN_POLL_INTERVAL_SEC) + jitter;
                 snap.status = Status::Offline;
                 snap.stale = true;
                 snap.retry_in_sec = Some(wait.as_secs());
@@ -390,6 +470,8 @@ fn handle_credential_error(state: &AppState, err: CredentialError) -> Option<Dur
             snap.plan = None;
             snap.five_hour = None;
             snap.seven_day = None;
+            snap.scoped.clear();
+            snap.spend = None;
             snap.message = Some(st.msg_no_creds().into());
             tracing::info!("no credentials");
         }
@@ -433,6 +515,7 @@ mod tests {
                 resets_at: Some("2026-09-22T18:00:00Z".into()),
             }),
             seven_day: Some(usage_api::UsageWindow { utilization: None, resets_at: None }),
+            ..Default::default()
         };
         s.apply_response(&resp, Utc::now());
         assert_eq!(s.five_hour.as_ref().unwrap().utilization, 20.0);

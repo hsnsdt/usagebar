@@ -10,9 +10,9 @@ macOS'taki Usagebar'ın Windows muadili.
 </p>
 
 - **Tepsi ikonu:** 5 saatlik pencerenin doluluğu, renk kodlu halka (yeşil / sarı / turuncu / kırmızı). Tooltip'te iki pencere birden.
-- **Popup:** 5 saatlik pencere için halka gösterge, canlı geri sayım ve tempo yorumu; haftalık limit; kalan context (proje ve model adıyla); son 7 günün günlük token grafiği ve düne göre değişim okları.
+- **Popup:** 5 saatlik pencere için halka gösterge, canlı geri sayım ve tempo yorumu; haftalık limit ve altında modele özel haftalık limitler (ör. Fable); hesapta açıksa ekstra kullanım harcaması; kalan context (proje ve model adıyla); son 7 günün günlük token grafiği ve düne göre değişim okları.
 - **Tempo işareti:** bar ve halka üstündeki küçük çizgi, pencerenin ne kadarının geçtiğini gösterir. Doluluk çizginin solundaysa rahatsın.
-- **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez.
+- **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez. İstersen yoğun geçen 5 saatlik pencere sıfırlanınca da bildirim.
 - Windows ile başlar, arka planda çalışır. Boşta ~35 MB RAM, ~0 CPU. Kurulum 2.5 MB.
 - Türkçe ve İngilizce. Varsayılan sistem dili; ayarlardan değiştirilebilir. Tepsi menüsü, tooltip ve bildirimler de aynı dili kullanır.
 
@@ -49,11 +49,11 @@ Kendin doğrula:
 
 | Veri | Kaynak |
 |---|---|
-| 5 saatlik / haftalık limit | Anthropic OAuth usage endpoint'i. Resmi değil, topluluk keşfi; şema değişirse uygulama cache'e düşer, çökmez. |
+| 5 saatlik / haftalık / modele özel limit, ekstra kullanım | Anthropic OAuth usage endpoint'i. Resmi değil, topluluk keşfi; şema değişirse uygulama cache'e düşer, çökmez. |
 | Kalan context, günlük token / mesaj, 7 günlük geçmiş | `~/.claude/projects/**/*.jsonl` transcript'leri. Artımlı okunur, dosya başına byte offset tutulur; `message.id + requestId` ile dedupe. |
 | Plan rozeti | `.credentials.json` içindeki `subscriptionType` |
 
-API en fazla 5 dakikada bir sorgulanır. Aralık ayarlardan artırılabilir, 180 saniyenin altına inemez. 429 alınırsa üstel geri çekilme uygulanır (5 → 10 → 20 → 30 dk) ve son bilinen veri "bayat" işaretiyle gösterilir.
+API en fazla 5 dakikada bir sorgulanır. Aralık ayarlardan artırılabilir, 180 saniyenin altına inemez. PC uykudan uyanınca bir sonraki sorgu öne çekilir (yine de bir öncekine 180 saniyeden yakın olmaz). 429 alınırsa üstel geri çekilme uygulanır (5 → 10 → 20 → 30 dk) ve son bilinen veri "bayat" işaretiyle gösterilir.
 
 Context hesabı son assistant mesajının `input + cache_read + cache_creation + output` toplamıdır. Pencere, oturumun model adından belirlenir (Claude 5 ailesi 1M, öncekiler 200K) ve autocompact payı düşülür. Bir oturum varsayılan pencereyi aşarsa uygulama bir üst kademeye geçer, %100'de takılı kalmaz. Ayarlardan otomatik modu kapatıp kendi değerini yazabilirsin.
 
@@ -70,7 +70,7 @@ Yerel veriler (context, günlük istatistikler) API'den bağımsızdır; bu duru
 
 ## Ayarlar
 
-Popup içinde dişli ikonu. Yenileme aralığı, otomatik veya elle context penceresi, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
+Popup içinde dişli ikonu. Yenileme aralığı, otomatik veya elle context penceresi, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), saat biçimi (sistem / 24 saat / 12 saat), kullanılan veya kalan yüzde, tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri, reset bildirimi. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
 
 ## Geliştirme
 

@@ -22,6 +22,21 @@ export type ContextSnap = {
   auto: boolean;
 };
 
+/** Weekly limit that only counts one model or surface (e.g. Fable). */
+export type ScopedSnap = {
+  label: string;
+  utilization: number;
+  resetsAt: string | null;
+};
+
+/** Extra usage spend, major currency units. Present only when enabled. */
+export type SpendSnap = {
+  used: number;
+  limit: number | null;
+  currency: string;
+  percent: number | null;
+};
+
 export type DayStat = {
   /** YYYY-MM-DD local */
   date: string;
@@ -34,6 +49,8 @@ export type Snapshot = {
   plan: string | null;
   fiveHour: WindowSnap | null;
   sevenDay: WindowSnap | null;
+  scoped: ScopedSnap[];
+  spend: SpendSnap | null;
   context: ContextSnap | null;
   today: { messages: number; tokens: number };
   /** Last 7 local days, oldest first, today last. Empty until the first scan. */
@@ -50,14 +67,18 @@ export type NotificationSettings = {
   fiveHour: number[];
   sevenDay: number[];
   contextLowTokens: number;
+  onReset: boolean;
 };
 
 export type Theme = "system" | "dark" | "light";
 export type Language = "system" | "tr" | "en";
+export type TimeFormat = "system" | "24h" | "12h";
 
 export type Settings = {
   pollIntervalSec: number;
   showPercentText: boolean;
+  showRemaining: boolean;
+  timeFormat: TimeFormat;
   usableContextTokens: number;
   autoContextWindow: boolean;
   startWithWindows: boolean;

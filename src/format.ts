@@ -1,6 +1,33 @@
 // Formatting helpers. Language-aware via i18n's current language.
 
 import { getLang } from "./i18n";
+import type { TimeFormat } from "./types";
+
+// Display preferences from settings; set by App via setDisplayPrefs.
+let hour12 = systemHour12();
+let showRemaining = false;
+
+function systemHour12(): boolean {
+  try {
+    return new Intl.DateTimeFormat(navigator.language, { hour: "numeric" }).resolvedOptions().hour12 === true;
+  } catch {
+    return false;
+  }
+}
+
+export function setDisplayPrefs(p: { timeFormat: TimeFormat; showRemaining: boolean }) {
+  hour12 = p.timeFormat === "12h" ? true : p.timeFormat === "24h" ? false : systemHour12();
+  showRemaining = p.showRemaining;
+}
+
+export function isShowingRemaining(): boolean {
+  return showRemaining;
+}
+
+/** The number to show for a usage percent: used, or what is left. */
+export function shown(used: number): number {
+  return showRemaining ? Math.max(0, 100 - used) : used;
+}
 
 export type Tone = "green" | "yellow" | "orange" | "red" | "gray";
 
@@ -50,9 +77,27 @@ export function localClockTr(d: Date): string {
 }
 
 export function clock(d: Date): string {
-  const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
+  if (hour12) {
+    const h = d.getHours() % 12 || 12;
+    return `${h}:${mm} ${d.getHours() < 12 ? "AM" : "PM"}`;
+  }
+  const hh = String(d.getHours()).padStart(2, "0");
   return `${hh}:${mm}`;
+}
+
+/** 15.38 EUR -> "€15.38" style, falling back to "15.38 EUR". */
+export function money(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(getLang() === "tr" ? "tr-TR" : "en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
 }
 
 /** "Bugün 23:10" / "Today 23:10", or "Pzt 14:59" when on another day. */

@@ -7,6 +7,7 @@ import Welcome from "./views/Welcome";
 import About from "./views/About";
 import { hidePopup, useUsage } from "./hooks/useUsage";
 import { setLanguage, t, useLang } from "./i18n";
+import { setDisplayPrefs } from "./format";
 import type { Settings, Theme } from "./types";
 import "./styles/tokens.css";
 import "./styles/app.css";
@@ -83,6 +84,7 @@ export default function App() {
 
 function applySettings(s: Settings) {
   applyTheme(s.theme);
+  setDisplayPrefs(s);
   setLanguage(s.language);
 }
 

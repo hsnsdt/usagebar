@@ -4,7 +4,7 @@ import { BackIcon } from "../components/Icons";
 import { pct } from "../format";
 import { setLanguage, t, useLang, type LangSetting } from "../i18n";
 import { tokensK } from "../format";
-import { MIN_POLL_INTERVAL_SEC, type Settings, type Snapshot, type Theme } from "../types";
+import { MIN_POLL_INTERVAL_SEC, type Settings, type Snapshot, type Theme, type TimeFormat } from "../types";
 
 const FIVE_HOUR_OPTIONS = [50, 75, 90];
 const SEVEN_DAY_OPTIONS = [80, 95];
@@ -132,6 +132,23 @@ export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
               <option value="en">English</option>
             </select>
           </Row>
+          <Row label={t("sTimeFormat")}>
+            <select
+              className="input"
+              value={s.timeFormat}
+              onChange={(e) => patch({ timeFormat: e.target.value as TimeFormat })}
+            >
+              <option value="system">{t("themeSystem")}</option>
+              <option value="24h">{t("time24")}</option>
+              <option value="12h">{t("time12")}</option>
+            </select>
+          </Row>
+          <Toggle
+            label={t("sShowRemaining")}
+            hint={t("sShowRemainingHint")}
+            checked={s.showRemaining}
+            onChange={(v) => patch({ showRemaining: v })}
+          />
         </section>
 
         <div className="eyebrow eyebrow--group">{t("sTray")}</div>
@@ -197,6 +214,12 @@ export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
             />
             <span className="unit">{t("sToken")}</span>
           </Row>
+          <Toggle
+            label={t("sOnReset")}
+            hint={t("sOnResetHint")}
+            checked={s.notifications.onReset}
+            onChange={(v) => patchN({ onReset: v })}
+          />
         </section>
 
         <div className="settings__foot">

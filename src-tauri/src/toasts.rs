@@ -16,6 +16,10 @@ use crate::config;
 pub struct ToastState {
     five_hour_reset: Option<String>,
     five_hour_fired: Vec<u8>,
+    /// Highest 5-hour utilization seen in the window `five_hour_reset` names.
+    five_hour_peak: f64,
+    /// Reset time of the last window whose reset was announced.
+    reset_announced: Option<String>,
     seven_day_reset: Option<String>,
     seven_day_fired: Vec<u8>,
     context_session: Option<String>,
@@ -59,7 +63,22 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
     // window that has already reset.
     let fresh = !snap.stale;
 
+    // Reset first: window_toast below overwrites the stored reset time.
+    if fresh && settings.notifications.on_reset {
+        let min_peak = settings.notifications.five_hour.first().copied().unwrap_or(50) as f64;
+        if reset_due(st, now, min_peak) {
+            out.push(Toast {
+                title: st_lang.toast_reset_title().into(),
+                body: st_lang.toast_reset_body().into(),
+            });
+        }
+    }
+
     if let Some(w) = snap.five_hour.as_ref().filter(|_| fresh) {
+        if w.resets_at != st.five_hour_reset {
+            st.five_hour_peak = 0.0;
+        }
+        st.five_hour_peak = st.five_hour_peak.max(w.utilization);
         if let Some(t) = window_toast(
             w,
             &settings.notifications.five_hour,
@@ -107,6 +126,22 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
     }
 
     out
+}
+
+/// A reset is announced once, only for a window that got busy (peak at or
+/// above the lowest 5-hour threshold) and only if we notice within an hour;
+/// an app started long after the reset stays quiet.
+fn reset_due(st: &mut ToastState, now: chrono::DateTime<chrono::Utc>, min_peak: f64) -> bool {
+    let Some(stored) = st.five_hour_reset.clone() else { return false };
+    let Ok(at) = chrono::DateTime::parse_from_rfc3339(&stored) else { return false };
+    let since = now.signed_duration_since(at);
+    if since < chrono::Duration::zero() || st.reset_announced.as_deref() == Some(stored.as_str()) {
+        return false;
+    }
+    st.reset_announced = Some(stored);
+    let due = st.five_hour_peak >= min_peak && since < chrono::Duration::hours(1);
+    st.five_hour_peak = 0.0;
+    due
 }
 
 /// Returns the threshold to announce, if any, and updates dedupe state.
@@ -168,6 +203,8 @@ mod tests {
             plan: None,
             five_hour: Some(WindowSnap { utilization: five, resets_at: Some(reset.into()) }),
             seven_day: None,
+            scoped: Vec::new(),
+            spend: None,
             context: None,
             today: TodaySnap::default(),
             week: Vec::new(),
@@ -198,6 +235,40 @@ mod tests {
         let t = evaluate(&mut st, &snap(76.0, "B"), &settings, None);
         assert_eq!(t.len(), 1);
         assert!(t[0].title.ends_with("%75"));
+    }
+
+    #[test]
+    fn reset_announced_once_after_busy_window() {
+        let settings = Settings { language: "en".into(), ..Settings::default() };
+        let mut st = ToastState::default();
+        let past = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
+        let future = (chrono::Utc::now() + chrono::Duration::hours(4)).to_rfc3339();
+        // Busy window whose reset time has just passed.
+        let t = evaluate(&mut st, &snap(80.0, &past), &settings, None);
+        assert_eq!(t.len(), 1);
+        assert!(t[0].title.ends_with("75%"));
+        // Next poll notices the reset.
+        let t = evaluate(&mut st, &snap(2.0, &future), &settings, None);
+        assert_eq!(t.len(), 1);
+        assert!(t[0].title.contains("reset"));
+        // No repeat, and the new window starts quietly.
+        assert!(evaluate(&mut st, &snap(3.0, &future), &settings, None).is_empty());
+    }
+
+    #[test]
+    fn quiet_window_reset_is_silent() {
+        let settings = Settings::default();
+        let mut st = ToastState::default();
+        let past = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
+        let future = (chrono::Utc::now() + chrono::Duration::hours(4)).to_rfc3339();
+        assert!(evaluate(&mut st, &snap(10.0, &past), &settings, None).is_empty());
+        assert!(evaluate(&mut st, &snap(1.0, &future), &settings, None).is_empty());
+        // Busy window, but the reset toast is switched off.
+        let mut off = Settings::default();
+        off.notifications.on_reset = false;
+        let mut st = ToastState::default();
+        assert_eq!(evaluate(&mut st, &snap(95.0, &past), &off, None).len(), 1);
+        assert!(evaluate(&mut st, &snap(1.0, &future), &off, None).is_empty());
     }
 
     #[test]

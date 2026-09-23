@@ -25,13 +25,27 @@ pub fn resolve(setting: &str) -> Lang {
     }
 }
 
+/// "system" | "24h" | "12h" -> true for a 12-hour clock. The system choice
+/// follows the OS locale: only en-US style locales get AM/PM.
+pub fn resolve_hour12(setting: &str) -> bool {
+    match setting {
+        "12h" => true,
+        "24h" => false,
+        _ => {
+            let loc = sys_locale::get_locale().unwrap_or_default().to_lowercase();
+            matches!(loc.as_str(), "en-us" | "en-ca" | "en-au" | "en-ph" | "en-in")
+        }
+    }
+}
+
 pub struct Strings {
     pub lang: Lang,
+    pub hour12: bool,
 }
 
 impl Strings {
-    pub fn new(setting: &str) -> Self {
-        Self { lang: resolve(setting) }
+    pub fn new(setting: &str, time_format: &str) -> Self {
+        Self { lang: resolve(setting), hour12: resolve_hour12(time_format) }
     }
 
     fn pick<'a>(&self, tr: &'a str, en: &'a str) -> &'a str {
@@ -74,6 +88,13 @@ impl Strings {
     }
     pub fn tip_week(&self, pct: &str) -> String {
         format!("{}: {pct}", self.pick("Haftalık", "Weekly"))
+    }
+    pub fn tip_scoped(&self, label: &str, pct: &str) -> String {
+        format!("{label} ({}): {pct}", self.pick("haftalık", "weekly"))
+    }
+    /// " kaldı" / " left" suffix when percentages show what remains.
+    pub fn left_suffix(&self) -> &'static str {
+        self.pick(" kaldı", " left")
     }
     pub fn tip_stale(&self) -> &'static str {
         self.pick("(bayat veri)", "(stale data)")
@@ -144,6 +165,12 @@ impl Strings {
             (Lang::En, None) => "Your weekly quota is running low.".into(),
         }
     }
+    pub fn toast_reset_title(&self) -> &'static str {
+        self.pick("Claude — 5 saatlik limit yenilendi", "Claude — 5-hour limit reset")
+    }
+    pub fn toast_reset_body(&self) -> &'static str {
+        self.pick("Yeni pencere açıldı, tam kotayla devam.", "A fresh window is open with your full quota.")
+    }
     pub fn toast_context_title(&self) -> &'static str {
         self.pick("Claude — context azalıyor", "Claude — context running low")
     }
@@ -206,7 +233,16 @@ impl Strings {
             }
             .to_string(),
         };
-        format!("{day} {}", local.format("%H:%M"))
+        format!("{day} {}", self.clock(local))
+    }
+
+    /// `14:59`, or `2:59 PM` on a 12-hour clock.
+    pub fn clock(&self, local: DateTime<Local>) -> String {
+        if self.hour12 {
+            local.format("%-I:%M %p").to_string()
+        } else {
+            local.format("%H:%M").to_string()
+        }
     }
 
     fn fmt(&self, r: &str, tr: &str, en: &str) -> String {
@@ -226,8 +262,8 @@ mod tests {
     #[test]
     fn remaining_both_languages() {
         let now = Utc::now();
-        let tr = Strings { lang: Lang::Tr };
-        let en = Strings { lang: Lang::En };
+        let tr = Strings { lang: Lang::Tr, hour12: false };
+        let en = Strings { lang: Lang::En, hour12: false };
         assert_eq!(tr.remaining(now + Duration::minutes(294), now), "4sa 54dk");
         assert_eq!(en.remaining(now + Duration::minutes(294), now), "4h 54m");
         assert_eq!(en.remaining(now + Duration::hours(49), now), "2d 1h");
@@ -237,8 +273,18 @@ mod tests {
 
     #[test]
     fn percent_order() {
-        assert_eq!(Strings { lang: Lang::Tr }.percent(19.6), "%20");
-        assert_eq!(Strings { lang: Lang::En }.percent(19.6), "20%");
+        assert_eq!(Strings { lang: Lang::Tr, hour12: false }.percent(19.6), "%20");
+        assert_eq!(Strings { lang: Lang::En, hour12: false }.percent(19.6), "20%");
+    }
+
+    #[test]
+    fn clock_formats() {
+        use chrono::TimeZone;
+        let at = Local.with_ymd_and_hms(2026, 9, 21, 14, 5, 0).unwrap();
+        assert_eq!(Strings { lang: Lang::En, hour12: false }.clock(at), "14:05");
+        assert_eq!(Strings { lang: Lang::En, hour12: true }.clock(at), "2:05 PM");
+        assert!(resolve_hour12("12h"));
+        assert!(!resolve_hour12("24h"));
     }
 
     #[test]
@@ -249,7 +295,7 @@ mod tests {
 
     #[test]
     fn toast_bodies() {
-        let en = Strings { lang: Lang::En };
+        let en = Strings { lang: Lang::En, hour12: false };
         assert_eq!(en.toast_five_body(Some("now".into())), "About to reset.");
         assert_eq!(en.toast_five_body(Some("4h 2m".into())), "Resets in 4h 2m. Wrap things up.");
         assert_eq!(en.toast_five_title(90), "Claude — 5-hour limit 90%");

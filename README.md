@@ -10,9 +10,9 @@ The Windows counterpart of Usagebar on macOS.
 </p>
 
 - **Tray icon:** a colour-coded ring (green / yellow / orange / red) filled to the 5-hour window's utilisation. The tooltip shows both windows.
-- **Popup:** ring gauge for the 5-hour window with a live countdown and a pace verdict; weekly limit; remaining context (with project and model); a 7-day daily token chart with up/down change badges versus yesterday.
+- **Popup:** ring gauge for the 5-hour window with a live countdown and a pace verdict; weekly limit with model-specific weekly limits (e.g. Fable) underneath; extra usage spend when it is switched on for the account; remaining context (with project and model); a 7-day daily token chart with up/down change badges versus yesterday.
 - **Pace marker:** the small tick on each bar and on the ring shows how much of the window has elapsed. If the fill is left of the tick, you are fine.
-- **Notifications:** 5-hour window at 50% / 75% / 90%, weekly at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window.
+- **Notifications:** 5-hour window at 50% / 75% / 90%, weekly at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window. Optionally a toast when a busy 5-hour window resets.
 - Starts with Windows, runs in the background. About 35 MB RAM idle, ~0 CPU, 2.5 MB installer.
 - Turkish and English. Follows the system language by default; switchable in settings. The tray menu, tooltip and toasts use the same language.
 
@@ -49,11 +49,11 @@ Verify it yourself:
 
 | Data | Source |
 |---|---|
-| 5-hour / weekly limits | Anthropic's OAuth usage endpoint. Not official, community-discovered; if the schema changes the app falls back to its cache instead of crashing. |
+| 5-hour / weekly / model-specific limits, extra usage | Anthropic's OAuth usage endpoint. Not official, community-discovered; if the schema changes the app falls back to its cache instead of crashing. |
 | Remaining context, daily tokens / messages, 7-day history | `~/.claude/projects/**/*.jsonl` transcripts. Read incrementally with a byte offset per file; deduped on `message.id + requestId`. |
 | Plan badge | `subscriptionType` from `.credentials.json` |
 
-The API is polled at most every 5 minutes. The interval can be raised in settings but never goes below 180 seconds. On a 429 the app backs off exponentially (5 → 10 → 20 → 30 min) and keeps showing the last known data marked as stale.
+The API is polled at most every 5 minutes. The interval can be raised in settings but never goes below 180 seconds. After the PC wakes from sleep the next poll is pulled forward (still never closer than 180 seconds to the previous one). On a 429 the app backs off exponentially (5 → 10 → 20 → 30 min) and keeps showing the last known data marked as stale.
 
 Context is computed as `input + cache_read + cache_creation + output` of the latest assistant message. The window is derived from the session's model id (Claude 5 family: 1M, earlier models: 200K), minus the share autocompact reserves. If a session somehow exceeds the assumed window, the app escalates to the next tier instead of showing a stuck 100%. Turn the automatic mode off in settings to pin a number yourself.
 
@@ -70,7 +70,7 @@ Local data (context, daily stats) does not depend on the API and keeps updating 
 
 ## Settings
 
-The gear icon in the popup. Refresh interval, automatic or manual context window, theme (dark / light / system), language (system / Türkçe / English), percent text on the tray icon, start with Windows, notification thresholds. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
+The gear icon in the popup. Refresh interval, automatic or manual context window, theme (dark / light / system), language (system / Türkçe / English), time format (system / 24-hour / 12-hour), used or remaining percentages, percent text on the tray icon, start with Windows, notification thresholds, reset notification. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
 
 ## Development
 
