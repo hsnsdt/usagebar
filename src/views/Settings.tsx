@@ -3,7 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { BackIcon } from "../components/Icons";
 import { pct } from "../format";
 import { setLanguage, t, useLang, type LangSetting } from "../i18n";
-import { MIN_POLL_INTERVAL_SEC, type Settings, type Theme } from "../types";
+import { tokensK } from "../format";
+import { MIN_POLL_INTERVAL_SEC, type Settings, type Snapshot, type Theme } from "../types";
 
 const FIVE_HOUR_OPTIONS = [50, 75, 90];
 const SEVEN_DAY_OPTIONS = [80, 95];
@@ -18,11 +19,15 @@ export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
   useLang();
   const [s, setS] = useState<Settings | null>(null);
   const [version, setVersion] = useState("");
+  const [detected, setDetected] = useState<number | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
     invoke<Settings>("get_settings").then(setS).catch(() => {});
     invoke<string>("app_version").then(setVersion).catch(() => {});
+    invoke<Snapshot>("get_snapshot")
+      .then((snap) => setDetected(snap.context?.usable ?? null))
+      .catch(() => {});
   }, []);
 
   if (!s) return <div className="center-note">{t("loading")}</div>;
@@ -82,17 +87,29 @@ export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
             />
             <span className="unit">{t("sSec")}</span>
           </Row>
-          <Row label={t("sContext")} hint={t("sContextHint")}>
-            <input
-              className="input input--num input--wide"
-              type="number"
-              min={10000}
-              step={5000}
-              value={s.usableContextTokens}
-              onChange={(e) => patch({ usableContextTokens: Number(e.target.value) })}
-            />
-            <span className="unit">{t("sToken")}</span>
-          </Row>
+          <Toggle
+            label={t("sAutoContext")}
+            hint={
+              s.autoContextWindow && detected
+                ? `${t("sAutoContextHint")} · ${tokensK(detected)}`
+                : t("sAutoContextHint")
+            }
+            checked={s.autoContextWindow}
+            onChange={(v) => patch({ autoContextWindow: v })}
+          />
+          {!s.autoContextWindow && (
+            <Row label={t("sContext")} hint={t("sContextHint")}>
+              <input
+                className="input input--num input--wide"
+                type="number"
+                min={10000}
+                step={5000}
+                value={s.usableContextTokens}
+                onChange={(e) => patch({ usableContextTokens: Number(e.target.value) })}
+              />
+              <span className="unit">{t("sToken")}</span>
+            </Row>
+          )}
           <Row label={t("sTheme")}>
             <select className="input" value={s.theme} onChange={(e) => patch({ theme: e.target.value as Theme })}>
               <option value="dark">{t("themeDark")}</option>

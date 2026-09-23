@@ -870,6 +870,17 @@ select.input option {
   color: var(--fg-3);
   margin-left: auto;
 }
+.row-card__tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--fg-3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .about__note {
   margin: 2px 4px 0;
   font-size: 11px;

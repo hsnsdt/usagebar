@@ -55,7 +55,7 @@ Kendin doğrula:
 
 API en fazla 5 dakikada bir sorgulanır. Aralık ayarlardan artırılabilir, 180 saniyenin altına inemez. 429 alınırsa üstel geri çekilme uygulanır (5 → 10 → 20 → 30 dk) ve son bilinen veri "bayat" işaretiyle gösterilir.
 
-Context hesabı `input + cache_read + cache_creation + output` toplamıdır; varsayılan kullanılabilir context 155K (autocompact payı düşülmüş), ayarlardan değiştirilebilir. 1M context'li modellerde bu değeri yükseltmen gerekir.
+Context hesabı son assistant mesajının `input + cache_read + cache_creation + output` toplamıdır. Pencere, oturumun model adından belirlenir (Claude 5 ailesi 1M, öncekiler 200K) ve autocompact payı düşülür. Bir oturum varsayılan pencereyi aşarsa uygulama bir üst kademeye geçer, %100'de takılı kalmaz. Ayarlardan otomatik modu kapatıp kendi değerini yazabilirsin.
 
 ## Durumlar
 
@@ -70,7 +70,7 @@ Yerel veriler (context, günlük istatistikler) API'den bağımsızdır; bu duru
 
 ## Ayarlar
 
-Popup içinde dişli ikonu. Yenileme aralığı, kullanılabilir context, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
+Popup içinde dişli ikonu. Yenileme aralığı, otomatik veya elle context penceresi, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
 
 ## Geliştirme
 
@@ -92,6 +92,7 @@ Yerleşim:
 src/                      popup UI (React + TS, plain CSS); src/i18n.ts metinler
 src-tauri/src/i18n.rs     Rust tarafı metinler (menü, tooltip, bildirim)
 src-tauri/src/config.rs   sabitler: endpoint, header'lar, limitler
+src-tauri/src/context.rs  modele göre context penceresi
 src-tauri/src/credentials.rs   credential okuma (salt okunur)
 src-tauri/src/usage_api.rs     API istemcisi, cache, backoff
 src-tauri/src/transcripts.rs   JSONL artımlı tarama, 7 günlük geçmiş

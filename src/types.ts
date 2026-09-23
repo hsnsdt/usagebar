@@ -18,6 +18,8 @@ export type ContextSnap = {
   usable: number;
   project: string | null;
   model: string | null;
+  /** usable was derived from the model rather than the manual setting */
+  auto: boolean;
 };
 
 export type DayStat = {
@@ -57,6 +59,7 @@ export type Settings = {
   pollIntervalSec: number;
   showPercentText: boolean;
   usableContextTokens: number;
+  autoContextWindow: boolean;
   startWithWindows: boolean;
   theme: Theme;
   language: Language;

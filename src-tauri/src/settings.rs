@@ -32,6 +32,9 @@ pub struct Settings {
     pub poll_interval_sec: u64,
     pub show_percent_text: bool,
     pub usable_context_tokens: u64,
+    /// Derive the usable context from the session's model instead of using
+    /// `usable_context_tokens`.
+    pub auto_context_window: bool,
     pub start_with_windows: bool,
     /// "system" | "dark" | "light"
     pub theme: String,
@@ -46,6 +49,7 @@ impl Default for Settings {
             poll_interval_sec: config::DEFAULT_POLL_INTERVAL_SEC,
             show_percent_text: false,
             usable_context_tokens: config::DEFAULT_USABLE_CONTEXT_TOKENS,
+            auto_context_window: true,
             start_with_windows: true,
             theme: "dark".into(),
             language: "system".into(),

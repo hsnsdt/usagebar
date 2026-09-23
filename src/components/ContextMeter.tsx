@@ -50,7 +50,10 @@ export default function ContextMeter({ context }: { context: ContextSnap | null 
         </div>
       </div>
       <UsageBar value={usedPct} tone={tone} />
-      <div className="row-card__foot">{t("contextFoot", { usable: tokensK(context.usable), pct: pct(usedPct) })}</div>
+      <div className="row-card__foot">
+        {t("contextFoot", { usable: tokensK(context.usable), pct: pct(usedPct) })}
+        {context.auto && <span className="row-card__tag">{t("contextAuto")}</span>}
+      </div>
     </section>
   );
 }

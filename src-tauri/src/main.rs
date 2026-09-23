@@ -3,6 +3,7 @@
 mod app;
 mod commands;
 mod config;
+mod context;
 mod credentials;
 mod i18n;
 mod logging;

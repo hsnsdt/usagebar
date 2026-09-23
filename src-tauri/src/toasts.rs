@@ -224,15 +224,15 @@ mod tests {
         let settings = Settings::default();
         let mut st = ToastState::default();
         let mut s = snap(0.0, "A");
-        s.context = Some(ContextSnap { used: 140_000, usable: 155_000, project: None, model: None });
+        s.context = Some(ContextSnap { used: 140_000, usable: 155_000, project: None, model: None, auto: true });
         assert_eq!(evaluate(&mut st, &s, &settings, Some("f1")).len(), 1);
         assert_eq!(evaluate(&mut st, &s, &settings, Some("f1")).len(), 0);
         // Different session file re-arms.
         assert_eq!(evaluate(&mut st, &s, &settings, Some("f2")).len(), 1);
         // Context freed (compaction) re-arms within the same session.
-        s.context = Some(ContextSnap { used: 20_000, usable: 155_000, project: None, model: None });
+        s.context = Some(ContextSnap { used: 20_000, usable: 155_000, project: None, model: None, auto: true });
         assert_eq!(evaluate(&mut st, &s, &settings, Some("f2")).len(), 0);
-        s.context = Some(ContextSnap { used: 150_000, usable: 155_000, project: None, model: None });
+        s.context = Some(ContextSnap { used: 150_000, usable: 155_000, project: None, model: None, auto: true });
         assert_eq!(evaluate(&mut st, &s, &settings, Some("f2")).len(), 1);
     }
 }

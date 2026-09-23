@@ -42,7 +42,8 @@ pub fn save_settings<R: Runtime>(
     // Re-derive context.usable + tray text without waiting for the next poll.
     if let Ok(mut snap) = state.snapshot.lock() {
         if let Some(ctx) = snap.context.as_mut() {
-            ctx.usable = saved.usable_context_tokens;
+            ctx.usable = crate::context::resolve_usable(&saved, ctx.model.as_deref(), ctx.used);
+            ctx.auto = saved.auto_context_window;
         }
     }
     crate::state::publish(&app);

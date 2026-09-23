@@ -55,7 +55,7 @@ Verify it yourself:
 
 The API is polled at most every 5 minutes. The interval can be raised in settings but never goes below 180 seconds. On a 429 the app backs off exponentially (5 → 10 → 20 → 30 min) and keeps showing the last known data marked as stale.
 
-Context is computed as `input + cache_read + cache_creation + output` of the latest assistant message; the default usable context is 155K (autocompact share excluded) and can be changed in settings. Raise it for 1M-context models.
+Context is computed as `input + cache_read + cache_creation + output` of the latest assistant message. The window is derived from the session's model id (Claude 5 family: 1M, earlier models: 200K), minus the share autocompact reserves. If a session somehow exceeds the assumed window, the app escalates to the next tier instead of showing a stuck 100%. Turn the automatic mode off in settings to pin a number yourself.
 
 ## States
 
@@ -70,7 +70,7 @@ Local data (context, daily stats) does not depend on the API and keeps updating 
 
 ## Settings
 
-The gear icon in the popup. Refresh interval, usable context, theme (dark / light / system), language (system / Türkçe / English), percent text on the tray icon, start with Windows, notification thresholds. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
+The gear icon in the popup. Refresh interval, automatic or manual context window, theme (dark / light / system), language (system / Türkçe / English), percent text on the tray icon, start with Windows, notification thresholds. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
 
 ## Development
 
@@ -92,6 +92,7 @@ Layout:
 src/                      popup UI (React + TS, plain CSS); src/i18n.ts strings
 src-tauri/src/i18n.rs     Rust-side strings (menu, tooltip, toasts)
 src-tauri/src/config.rs   constants: endpoint, headers, limits
+src-tauri/src/context.rs  model -> context window sizing
 src-tauri/src/credentials.rs   credential reading (read-only)
 src-tauri/src/usage_api.rs     API client, cache, backoff
 src-tauri/src/transcripts.rs   incremental JSONL scan, 7-day history

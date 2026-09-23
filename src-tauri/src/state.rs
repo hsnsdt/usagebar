@@ -63,6 +63,8 @@ pub struct ContextSnap {
     pub usable: u64,
     pub project: Option<String>,
     pub model: Option<String>,
+    /// `usable` came from the model, not from the manual setting.
+    pub auto: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -222,15 +224,16 @@ impl AppState {
             }
         }).unwrap_or(false);
         if changed {
-            let usable = self.settings().usable_context_tokens;
+            let settings = self.settings();
             if let Ok(mut snap) = self.snapshot.lock() {
                 snap.today = TodaySnap { messages: local.today_messages, tokens: local.today_tokens };
                 snap.week = local.days.clone();
                 snap.context = local.context_used.map(|used| ContextSnap {
                     used,
-                    usable,
+                    usable: crate::context::resolve_usable(&settings, local.model.as_deref(), used),
                     project: local.project.clone(),
                     model: local.model.clone(),
+                    auto: settings.auto_context_window,
                 });
             }
         }
