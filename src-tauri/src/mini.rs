@@ -32,13 +32,21 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, on: bool) {
     if existing.is_some() {
         return;
     }
-    match create(app) {
-        Ok(w) => {
-            place(app, &w);
-            let _ = w.show();
+    // Never build a window on the calling thread: from a sync command or a
+    // tray menu handler that deadlocks the Windows event loop (wry#583).
+    let app = app.clone();
+    std::thread::spawn(move || {
+        if app.get_webview_window(LABEL).is_some() {
+            return;
         }
-        Err(e) => tracing::warn!("mini window failed: {e}"),
-    }
+        match create(&app) {
+            Ok(w) => {
+                place(&app, &w);
+                let _ = w.show();
+            }
+            Err(e) => tracing::warn!("mini window failed: {e}"),
+        }
+    });
 }
 
 fn create<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>> {

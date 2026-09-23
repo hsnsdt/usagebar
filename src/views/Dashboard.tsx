@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import ContextMeter from "../components/ContextMeter";
-import { GearIcon, RefreshIcon } from "../components/Icons";
+import { ChartIcon, GearIcon, RefreshIcon } from "../components/Icons";
 import Ring from "../components/Ring";
 import StatusBanner from "../components/StatusBanner";
 import UsageBar from "../components/UsageBar";
@@ -31,9 +31,10 @@ type Props = {
   snapshot: Snapshot;
   now: Date;
   onOpenSettings: () => void;
+  onOpenHistory: () => void;
 };
 
-export default function Dashboard({ snapshot, now, onOpenSettings }: Props) {
+export default function Dashboard({ snapshot, now, onOpenSettings, onOpenHistory }: Props) {
   useLang();
   const [spinning, setSpinning] = useState(false);
   const apiDataHidden = snapshot.status === "no_credentials";
@@ -57,6 +58,9 @@ export default function Dashboard({ snapshot, now, onOpenSettings }: Props) {
         <div className="head__actions">
           <button className={`iconbtn${spinning ? " spin" : ""}`} title={t("refresh")} aria-label={t("refresh")} onClick={onRefresh}>
             <RefreshIcon size={16} />
+          </button>
+          <button className="iconbtn" title={t("history")} aria-label={t("history")} onClick={onOpenHistory}>
+            <ChartIcon size={16} />
           </button>
           <button className="iconbtn" title={t("settings")} aria-label={t("settings")} onClick={onOpenSettings}>
             <GearIcon size={17} />

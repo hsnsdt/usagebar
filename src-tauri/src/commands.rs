@@ -80,6 +80,22 @@ pub fn set_mini<R: Runtime>(app: &AppHandle<R>, state: &AppState, on: bool) {
     let _ = app.emit("settings-changed", &state.settings());
 }
 
+/// Bucketed usage history for the last `hours` hours.
+#[tauri::command]
+pub fn get_history(hours: u32) -> crate::history::HistoryView {
+    crate::history::view(hours, chrono::Utc::now())
+}
+
+/// Export the whole history as CSV into Downloads and select it in Explorer.
+#[tauri::command]
+pub fn export_history_csv() -> Result<String, String> {
+    let file = crate::history::export_csv()?;
+    let _ = std::process::Command::new("explorer")
+        .arg(format!("/select,{}", file.display()))
+        .spawn();
+    Ok(file.display().to_string())
+}
+
 /// Open the main popup (double-click / button on the mini window).
 #[tauri::command]
 pub fn open_popup<R: Runtime>(app: AppHandle<R>) {

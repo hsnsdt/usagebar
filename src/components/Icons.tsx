@@ -53,3 +53,12 @@ export function InfoIcon({ size = 14, className }: P) {
     </svg>
   );
 }
+
+export function ChartIcon({ size = 16, className }: P) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 4v16h16" />
+      <path d="M7 15l4-5 3 3 5-6" />
+    </svg>
+  );
+}

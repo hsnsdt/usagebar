@@ -5,6 +5,7 @@ import Dashboard from "./views/Dashboard";
 import SettingsView from "./views/Settings";
 import Welcome from "./views/Welcome";
 import About from "./views/About";
+import History from "./views/History";
 import { hidePopup, useUsage } from "./hooks/useUsage";
 import { setLanguage, t, useLang } from "./i18n";
 import { setDisplayPrefs } from "./format";
@@ -12,7 +13,7 @@ import type { Settings, Theme } from "./types";
 import "./styles/tokens.css";
 import "./styles/app.css";
 
-type View = "dashboard" | "settings" | "welcome" | "about";
+type View = "dashboard" | "settings" | "welcome" | "about" | "history";
 
 export default function App() {
   useLang();
@@ -47,7 +48,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (view === "settings") setView("dashboard");
+        if (view === "settings" || view === "history") setView("dashboard");
         else if (view === "about") setView("settings");
         else if (view !== "welcome") hidePopup();
       }
@@ -65,6 +66,8 @@ export default function App() {
             setView("dashboard");
           }}
         />
+      ) : view === "history" ? (
+        <History onBack={() => setView("dashboard")} />
       ) : view === "about" ? (
         <About onBack={() => setView("settings")} />
       ) : view === "settings" ? (
@@ -74,7 +77,12 @@ export default function App() {
           onAbout={() => setView("about")}
         />
       ) : snapshot ? (
-        <Dashboard snapshot={snapshot} now={now} onOpenSettings={() => setView("settings")} />
+        <Dashboard
+          snapshot={snapshot}
+          now={now}
+          onOpenSettings={() => setView("settings")}
+          onOpenHistory={() => setView("history")}
+        />
       ) : (
         <div className="center-note">{t("loading")}</div>
       )}

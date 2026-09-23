@@ -1038,3 +1038,127 @@ select.input option {
   background: var(--hover);
   color: var(--fg);
 }
+
+/* ------------------------------------------------------------- history */
+
+.chips--range {
+  padding: 0 2px;
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  color: var(--fg-2);
+}
+.legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend__swatch {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--series);
+  flex: 0 0 auto;
+}
+.s1 {
+  --series: var(--series-1);
+}
+.s2 {
+  --series: var(--series-2);
+}
+.hchart {
+  position: relative;
+}
+.hchart svg {
+  display: block;
+  overflow: visible;
+}
+.hchart__grid {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.hchart__axis {
+  fill: var(--fg-3);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+}
+.hchart__line {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.hchart__dot {
+  fill: var(--series);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.hchart__end {
+  fill: var(--fg-2);
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.hchart__cross {
+  stroke: var(--fg-3);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.hchart__tip {
+  position: absolute;
+  top: 4px;
+  margin-left: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--card-edge);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  font-size: 11px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+}
+.hchart__tip--left {
+  transform: translateX(-100%);
+  margin-left: -10px;
+}
+.hchart__tip-t {
+  color: var(--fg-3);
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.hchart__tip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-2);
+}
+.hchart__tip-row b {
+  margin-left: auto;
+  padding-left: 10px;
+  color: var(--fg);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.hchart__empty {
+  padding: 36px 8px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-3);
+}
+.hfoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 0;
+}
+.hfoot__note {
+  font-size: 11px;
+  color: var(--fg-3);
+}

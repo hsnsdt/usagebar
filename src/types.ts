@@ -43,6 +43,22 @@ export type ServiceSnap = {
   description: string;
 };
 
+/** One chart bucket (max within the bucket); null = no data. */
+export type HistoryPoint = {
+  t: number;
+  five: number | null;
+  week: number | null;
+};
+
+export type HistoryView = {
+  from: number;
+  to: number;
+  points: HistoryPoint[];
+  peakFive: number | null;
+  peakWeek: number | null;
+  firstSample: number | null;
+};
+
 export type DayStat = {
   /** YYYY-MM-DD local */
   date: string;

@@ -13,7 +13,7 @@ export const APP = {
   issues: "https://github.com/hsnsdt/usagebar/issues",
   releases: "https://github.com/hsnsdt/usagebar/releases",
   // Also in README.md, README.tr.md and .github/FUNDING.yml.
-  donate: "https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA",
+  donate: "https://checkout.dodopayments.com/buy/pdt_0NoEIiQ04pWMGCSY9fWXV?quantity=1",
   license: "MIT",
 };
 

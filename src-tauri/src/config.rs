@@ -39,6 +39,7 @@ pub const CACHE_FILE: &str = "usage-cache.json";
 pub const SETTINGS_FILE: &str = "settings.json";
 pub const SCAN_STATE_FILE: &str = "scan-state.json";
 pub const NOTIFY_STATE_FILE: &str = "notify-state.json";
+pub const HISTORY_FILE: &str = "usage-history.jsonl";
 pub const LOG_DIR: &str = "logs";
 
 /// `%APPDATA%\UsageTray`. Created on demand by callers.
@@ -76,11 +77,17 @@ pub fn claude_config_dir() -> Option<PathBuf> {
 
 /// Write JSON atomically (tmp + rename) so a crash never leaves a half file.
 pub fn write_json_atomic<T: serde::Serialize>(path: &std::path::Path, value: &T) -> anyhow::Result<()> {
+    write_atomic(path, &serde_json::to_vec_pretty(value)?)
+}
+
+/// Write bytes atomically (tmp + rename).
+pub fn write_atomic(path: &std::path::Path, data: &[u8]) -> anyhow::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let tmp = path.with_extension("json.tmp");
-    let data = serde_json::to_vec_pretty(value)?;
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = PathBuf::from(tmp);
     std::fs::write(&tmp, data)?;
     // On Windows rename fails if the target exists; remove first.
     let _ = std::fs::remove_file(path);

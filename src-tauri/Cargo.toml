@@ -1,6 +1,6 @@
 [package]
 name = "usagetray"
-version = "0.1.5"
+version = "0.1.6"
 description = "Windows tray app that shows Claude Code usage limits"
 authors = ["Sedat Okutan <sedat@okutan.org>"]
 edition = "2021"

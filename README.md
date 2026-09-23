@@ -13,6 +13,7 @@ The Windows counterpart of Usagebar on macOS.
 - **Popup:** ring gauge for the 5-hour window with a live countdown and a pace verdict; weekly limit with model-specific weekly limits (e.g. Fable) underneath; extra usage spend when it is switched on for the account; remaining context (with project and model); a 7-day daily token chart with up/down change badges versus yesterday.
 - **Pace marker:** the small tick on each bar and on the ring shows how much of the window has elapsed. If the fill is left of the tick, you are fine.
 - **Notifications:** 5-hour window at 50% / 75% / 90%, weekly and each model-specific weekly limit at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window. Optionally a toast when a busy 5-hour window resets.
+- **Usage history:** the chart button in the popup shows the 5-hour and weekly utilisation over 24 hours, 7 or 30 days, with peaks. Recorded locally (`usage-history.jsonl`, 35 days kept); "Export CSV" writes everything to Downloads.
 - **Mini window (optional):** a small always-on-top gauge you can drag anywhere; it remembers its position. Double-click opens the panel. Toggle it in settings or the tray menu.
 - **Keyboard shortcut:** `Ctrl+Alt+U` toggles the popup from anywhere (changeable or off in settings).
 - **Claude status (opt-in):** a small pill in the header shows status.claude.com's current state; click it to open the status page.
@@ -38,7 +39,7 @@ Being suspicious of an app that reads your OAuth token is the right instinct. So
 - `~/.claude/.credentials.json` is opened **read-only**. The app never refreshes the token or writes to the file; Claude Code does the refreshing.
 - The token never appears in a log line; it is masked as `sk-ant-oat01-****`.
 - No telemetry, analytics or crash reporting.
-- Everything stays local under `%APPDATA%\UsageTray\` (settings, cache, scan state, notification state, logs).
+- Everything stays local under `%APPDATA%\UsageTray\` (settings, cache, scan state, notification state, usage history, logs).
 
 The code is small and readable; if in doubt, look at `src-tauri/src/usage_api.rs` and `credentials.rs`.
 
@@ -109,7 +110,7 @@ Stack: Tauri v2, Rust, React 19, Vite. The icon is drawn at runtime with tiny-sk
 
 ## License
 
-If UsageTray is useful to you, you can support its development with a [donation](https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA).
+If UsageTray is useful to you, you can support its development with a [donation](https://checkout.dodopayments.com/buy/pdt_0NoEIiQ04pWMGCSY9fWXV?quantity=1).
 
 Developed by Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org, [www.okutan.org](https://www.okutan.org)).
 

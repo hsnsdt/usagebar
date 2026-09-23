@@ -32,6 +32,8 @@ pub fn run() {
             crate::commands::open_url,
             crate::commands::set_mini_window,
             crate::commands::open_popup,
+            crate::commands::get_history,
+            crate::commands::export_history_csv,
             crate::commands::quit_app,
         ])
         .setup(|app| {

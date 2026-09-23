@@ -5,6 +5,7 @@ mod commands;
 mod config;
 mod context;
 mod credentials;
+mod history;
 mod hotkey;
 mod i18n;
 mod logging;

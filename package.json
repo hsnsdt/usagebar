@@ -1,7 +1,7 @@
 {
   "name": "usagetray",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "author": "Sedat Okutan <sedat@okutan.org> (https://www.okutan.org)",
   "license": "MIT",

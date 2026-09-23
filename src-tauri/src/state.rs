@@ -208,6 +208,7 @@ pub struct AppState {
     pub snapshot: Mutex<Snapshot>,
     pub local: Mutex<LocalStats>,
     pub toasts: Mutex<crate::toasts::ToastState>,
+    pub history: Mutex<crate::history::History>,
     /// No settings.json existed at startup: show the welcome screen once.
     pub first_run: bool,
     refresh: Notify,
@@ -230,6 +231,7 @@ impl AppState {
             snapshot: Mutex::new(snapshot),
             local: Mutex::new(LocalStats::default()),
             toasts: Mutex::new(crate::toasts::load()),
+            history: Mutex::new(crate::history::History::load()),
             first_run,
             refresh: Notify::new(),
             last_request: Mutex::new(None),
@@ -428,6 +430,9 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
                 snap.retry_in_sec = None;
                 if let Ok(mut b) = state.backoff.lock() {
                     b.reset();
+                }
+                if let Ok(mut h) = state.history.lock() {
+                    h.record(&snap, now);
                 }
                 if let Err(e) = usage_api::save_cache(&UsageCache { fetched_at: now, response: resp }) {
                     tracing::warn!("cache write failed: {e}");

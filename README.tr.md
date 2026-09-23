@@ -13,6 +13,7 @@ macOS'taki Usagebar'ın Windows muadili.
 - **Popup:** 5 saatlik pencere için halka gösterge, canlı geri sayım ve tempo yorumu; haftalık limit ve altında modele özel haftalık limitler (ör. Fable); hesapta açıksa ekstra kullanım harcaması; kalan context (proje ve model adıyla); son 7 günün günlük token grafiği ve düne göre değişim okları.
 - **Tempo işareti:** bar ve halka üstündeki küçük çizgi, pencerenin ne kadarının geçtiğini gösterir. Doluluk çizginin solundaysa rahatsın.
 - **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık ve her modele özel haftalık limit %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez. İstersen yoğun geçen 5 saatlik pencere sıfırlanınca da bildirim.
+- **Kullanım geçmişi:** popup'taki grafik butonu 5 saatlik ve haftalık doluluğu 24 saat, 7 veya 30 gün için zirveleriyle gösterir. Yerel olarak kaydedilir (`usage-history.jsonl`, 35 gün tutulur); "CSV dışa aktar" hepsini İndirilenler'e yazar.
 - **Mini pencere (isteğe bağlı):** her zaman üstte duran, istediğin yere sürükleyebileceğin küçük gösterge; konumunu hatırlar. Çift tıklayınca panel açılır. Ayarlardan veya tray menüsünden açılır.
 - **Kısayol tuşu:** `Ctrl+Alt+U` popup'ı her yerden açıp kapatır (ayarlardan değişir veya kapanır).
 - **Claude durumu (isteğe bağlı):** başlıktaki küçük etiket status.claude.com'daki anlık durumu gösterir; tıklayınca durum sayfası açılır.
@@ -38,7 +39,7 @@ Bir uygulamanın OAuth token'ını okumasına şüpheyle yaklaşmak doğru. Bu y
 - `~/.claude/.credentials.json` **salt okunur** açılır. Uygulama token yenilemez, dosyaya yazmaz; yenilemeyi Claude Code kendisi yapar.
 - Token hiçbir log satırına yazılmaz; log'da `sk-ant-oat01-****` olarak maskelenir.
 - Telemetri, analytics, crash reporting yok.
-- Tüm veriler yerelde: `%APPDATA%\UsageTray\` (ayarlar, cache, tarama durumu, bildirim durumu, loglar).
+- Tüm veriler yerelde: `%APPDATA%\UsageTray\` (ayarlar, cache, tarama durumu, bildirim durumu, kullanım geçmişi, loglar).
 
 Kod küçük ve okunabilir; şüphen varsa `src-tauri/src/usage_api.rs` ve `credentials.rs` dosyalarına bak.
 
@@ -109,7 +110,7 @@ Stack: Tauri v2, Rust, React 19, Vite. İkon tiny-skia ile runtime'da çizilir. 
 
 ## Lisans
 
-UsageTray işine yaradıysa geliştirmesini [bağışla](https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA) destekleyebilirsin.
+UsageTray işine yaradıysa geliştirmesini [bağışla](https://checkout.dodopayments.com/buy/pdt_0NoEIiQ04pWMGCSY9fWXV?quantity=1) destekleyebilirsin.
 
 Geliştiren: Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org, [www.okutan.org](https://www.okutan.org)).
 

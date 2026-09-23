@@ -26,6 +26,10 @@
   --red: #f87171;
   --gray: #8b8b93;
 
+  /* chart series (categorical slots 1-2, validated) */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+
   --glow-alpha: 22%;
   --radius: 18px;
   --card-radius: 13px;
@@ -55,6 +59,8 @@
     --red: #dc2626;
     --gray: #6b7280;
     --glow-alpha: 14%;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
   }
 }
 
@@ -80,4 +86,6 @@
   --red: #dc2626;
   --gray: #6b7280;
   --glow-alpha: 14%;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
 }
