@@ -92,7 +92,7 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 19px;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -113,7 +113,7 @@ select {
 
 .badge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   padding: 2px 7px;
   border-radius: 999px;
@@ -121,6 +121,46 @@ select {
   color: var(--fg);
   position: relative;
   top: 1px;
+}
+
+/* Claude service status pill (opt-in) */
+.svc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 18px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  cursor: pointer;
+  position: relative;
+  top: 1px;
+  background: color-mix(in srgb, var(--svc) 14%, transparent);
+  color: var(--svc);
+}
+.svc:hover {
+  background: color-mix(in srgb, var(--svc) 22%, transparent);
+}
+.svc__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.svc--ok {
+  --svc: var(--green);
+}
+.svc--warn {
+  --svc: var(--yellow);
+}
+.svc--bad {
+  --svc: var(--red);
+}
+.svc--info {
+  --svc: var(--gray);
 }
 
 .iconbtn {
@@ -225,7 +265,7 @@ select {
 }
 .eyebrow {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--fg-3);
@@ -233,7 +273,7 @@ select {
 }
 .hero__big {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.025em;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
@@ -251,7 +291,7 @@ select {
   margin-top: 5px;
   font-size: 11.5px;
   line-height: 1.2;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-2);
 }
 .pace__dot {
@@ -312,7 +352,7 @@ select {
 }
 .ring__pct {
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -322,7 +362,7 @@ select {
 }
 .ring__unit {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--fg-2);
 }
 
@@ -346,7 +386,7 @@ select {
 }
 .row-card__title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
@@ -362,7 +402,7 @@ select {
 }
 .row-card__value {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -373,7 +413,7 @@ select {
 }
 .row-card__unit {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-2);
 }
 .row-card__foot {
@@ -431,7 +471,7 @@ select {
 }
 .scoped__label {
   color: var(--fg-2);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -442,7 +482,7 @@ select {
 }
 .scoped__value {
   text-align: right;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -481,14 +521,14 @@ select {
 .tile__k {
   font-size: 11px;
   line-height: 1.2;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--fg-3);
 }
 .tile__v {
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -533,7 +573,7 @@ select {
 }
 .week__day--today {
   color: var(--fg);
-  font-weight: 600;
+  font-weight: 500;
 }
 .week__stats {
   display: grid;
@@ -554,7 +594,7 @@ select {
   gap: 7px;
   font-size: 18px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -563,7 +603,7 @@ select {
   align-items: center;
   gap: 3px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--chip);
@@ -652,7 +692,7 @@ select {
   flex-direction: column;
   gap: 1px;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
 }
 .row__hint {
@@ -718,7 +758,7 @@ select.input option {
   background: var(--chip);
   color: var(--fg-2);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
@@ -775,7 +815,7 @@ select.input option {
   border-radius: 9px;
   background: var(--chip-on);
   color: var(--fg);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 .btn--primary {
@@ -868,7 +908,7 @@ select.input option {
 }
 .feature__title {
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
 }
 .feature__body {
@@ -910,7 +950,7 @@ select.input option {
   background: var(--chip);
   color: var(--fg-3);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -919,4 +959,82 @@ select.input option {
   font-size: 11px;
   line-height: 1.4;
   color: var(--fg-3);
+}
+
+/* ------------------------------------------------------------- mini window */
+
+.is-mini body {
+  background: transparent;
+}
+.mini {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px 0 9px;
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: grab;
+}
+.mini:active {
+  cursor: grabbing;
+}
+.mini .ring svg {
+  filter: none;
+}
+.mini__pct {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.mini__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mini__main {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.mini__sub {
+  font-size: 11px;
+  color: var(--fg-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.mini__sub span {
+  font-weight: 600;
+}
+.mini__close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: var(--chip);
+  color: var(--fg-2);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.mini:hover .mini__close {
+  opacity: 1;
+}
+.mini__close:hover {
+  background: var(--hover);
+  color: var(--fg);
 }

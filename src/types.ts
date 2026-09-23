@@ -37,6 +37,12 @@ export type SpendSnap = {
   percent: number | null;
 };
 
+/** status.claude.com; only present when the setting is on. */
+export type ServiceSnap = {
+  indicator: "none" | "minor" | "major" | "critical" | "maintenance" | string;
+  description: string;
+};
+
 export type DayStat = {
   /** YYYY-MM-DD local */
   date: string;
@@ -51,6 +57,7 @@ export type Snapshot = {
   sevenDay: WindowSnap | null;
   scoped: ScopedSnap[];
   spend: SpendSnap | null;
+  service: ServiceSnap | null;
   context: ContextSnap | null;
   today: { messages: number; tokens: number };
   /** Last 7 local days, oldest first, today last. Empty until the first scan. */
@@ -79,6 +86,12 @@ export type Settings = {
   showPercentText: boolean;
   showRemaining: boolean;
   timeFormat: TimeFormat;
+  /** Global shortcut toggling the popup; "" = off. */
+  hotkey: string;
+  showStatus: boolean;
+  miniWindow: boolean;
+  /** Owned by the mini window; the UI passes it through untouched. */
+  miniPos: [number, number] | null;
   usableContextTokens: number;
   autoContextWindow: boolean;
   startWithWindows: boolean;

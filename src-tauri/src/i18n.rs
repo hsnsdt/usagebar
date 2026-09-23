@@ -62,6 +62,9 @@ impl Strings {
     pub fn menu_settings(&self) -> &'static str {
         self.pick("Ayarlar", "Settings")
     }
+    pub fn menu_mini(&self) -> &'static str {
+        self.pick("Mini pencere", "Mini window")
+    }
     pub fn menu_autostart(&self) -> &'static str {
         self.pick("Başlangıçta çalıştır", "Start with Windows")
     }
@@ -95,6 +98,18 @@ impl Strings {
     /// " kaldı" / " left" suffix when percentages show what remains.
     pub fn left_suffix(&self) -> &'static str {
         self.pick(" kaldı", " left")
+    }
+    /// Tooltip line for a non-green service status; None when all is well.
+    pub fn tip_service(&self, indicator: &str) -> Option<String> {
+        let what = match indicator {
+            "none" => return None,
+            "minor" => self.pick("kısmi aksama", "degraded"),
+            "major" => self.pick("kesinti", "outage"),
+            "critical" => self.pick("büyük kesinti", "major outage"),
+            "maintenance" => self.pick("bakım", "maintenance"),
+            _ => self.pick("bilinmiyor", "unknown"),
+        };
+        Some(format!("{}: {what}", self.pick("Claude durumu", "Claude status")))
     }
     pub fn tip_stale(&self) -> &'static str {
         self.pick("(bayat veri)", "(stale data)")
@@ -155,6 +170,12 @@ impl Strings {
         match self.lang {
             Lang::Tr => format!("Claude — haftalık limit %{pct}"),
             Lang::En => format!("Claude — weekly limit {pct}%"),
+        }
+    }
+    pub fn toast_scoped_title(&self, label: &str, pct: u8) -> String {
+        match self.lang {
+            Lang::Tr => format!("Claude — {label} haftalık limit %{pct}"),
+            Lang::En => format!("Claude — {label} weekly limit {pct}%"),
         }
     }
     pub fn toast_week_body(&self, at: Option<DateTime<Utc>>) -> String {

@@ -10,6 +10,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(crate::hotkey::plugin())
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .args(autostart_args)
@@ -29,6 +30,8 @@ pub fn run() {
             crate::commands::open_logs_dir,
             crate::commands::app_version,
             crate::commands::open_url,
+            crate::commands::set_mini_window,
+            crate::commands::open_popup,
             crate::commands::quit_app,
         ])
         .setup(|app| {
@@ -37,6 +40,11 @@ pub fn run() {
 
             // Keep the registry autostart entry in sync with settings.json.
             sync_autostart(&handle);
+            let hotkey = handle.state::<AppState>().settings().hotkey;
+            crate::hotkey::apply(&handle, &hotkey);
+            if handle.state::<AppState>().settings().mini_window {
+                crate::mini::apply(&handle, true);
+            }
 
             crate::state::spawn_poll_loop(handle.clone());
             crate::transcripts::spawn(handle.clone());
@@ -91,6 +99,14 @@ pub fn run() {
                         tray::note_hidden(w.app_handle());
                     });
                 }
+            }
+            WindowEvent::Moved(pos) if window.label() == crate::mini::LABEL => {
+                crate::mini::on_moved(window.app_handle(), *pos);
+            }
+            WindowEvent::CloseRequested { .. } if window.label() == crate::mini::LABEL => {
+                // Alt+F4 on the mini window: treat as "turn it off".
+                let app = window.app_handle();
+                crate::commands::set_mini(app, &app.state::<AppState>(), false);
             }
             WindowEvent::CloseRequested { api, .. } => {
                 // Never destroy the popup; hiding keeps the webview warm.

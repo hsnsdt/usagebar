@@ -72,6 +72,15 @@ pub struct ScopedSnap {
     pub resets_at: Option<String>,
 }
 
+/// Claude service status from status.claude.com (only when enabled).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceSnap {
+    /// "none" | "minor" | "major" | "critical" | "maintenance"
+    pub indicator: String,
+    pub description: String,
+}
+
 /// Extra usage spend, in major currency units.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -121,6 +130,8 @@ pub struct Snapshot {
     pub scoped: Vec<ScopedSnap>,
     /// Only present when extra usage is switched on for the account.
     pub spend: Option<SpendSnap>,
+    /// Null unless the status setting is on and a fetch succeeded.
+    pub service: Option<ServiceSnap>,
     pub context: Option<ContextSnap>,
     pub today: TodaySnap,
     /// Last 7 local days, oldest first, today last. Empty before the first scan.
@@ -143,6 +154,7 @@ impl Snapshot {
             seven_day: None,
             scoped: Vec::new(),
             spend: None,
+            service: None,
             context: None,
             today: TodaySnap::default(),
             week: Vec::new(),
@@ -247,10 +259,21 @@ impl AppState {
         }
     }
 
-    /// Replace settings (from the UI), persist, and return the sanitized copy.
-    pub fn update_settings(&self, new: Settings) -> Settings {
-        let new = new.sanitized();
+    pub fn set_mini_window(&self, on: bool) {
         if let Ok(mut s) = self.settings.lock() {
+            s.mini_window = on;
+            if let Err(e) = settings::save(&s) {
+                tracing::warn!("settings save failed: {e}");
+            }
+        }
+    }
+
+    /// Replace settings (from the UI), persist, and return the sanitized copy.
+    /// The mini window position is owned by the window, not the UI: keep ours.
+    pub fn update_settings(&self, new: Settings) -> Settings {
+        let mut new = new.sanitized();
+        if let Ok(mut s) = self.settings.lock() {
+            new.mini_pos = s.mini_pos;
             *s = new.clone();
         }
         if let Err(e) = settings::save(&new) {
@@ -389,6 +412,7 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, client: &reqwest::Client) -> 
         *last = Some(Instant::now());
     }
     let result = usage_api::fetch(client, &cred.access_token).await;
+    crate::status_page::refresh(app).await;
     let now = Utc::now();
     let st = settings.strings();
 

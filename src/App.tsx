@@ -82,7 +82,7 @@ export default function App() {
   );
 }
 
-function applySettings(s: Settings) {
+export function applySettings(s: Settings) {
   applyTheme(s.theme);
   setDisplayPrefs(s);
   setLanguage(s.language);

@@ -12,7 +12,10 @@ macOS'taki Usagebar'ın Windows muadili.
 - **Tepsi ikonu:** 5 saatlik pencerenin doluluğu, renk kodlu halka (yeşil / sarı / turuncu / kırmızı). Tooltip'te iki pencere birden.
 - **Popup:** 5 saatlik pencere için halka gösterge, canlı geri sayım ve tempo yorumu; haftalık limit ve altında modele özel haftalık limitler (ör. Fable); hesapta açıksa ekstra kullanım harcaması; kalan context (proje ve model adıyla); son 7 günün günlük token grafiği ve düne göre değişim okları.
 - **Tempo işareti:** bar ve halka üstündeki küçük çizgi, pencerenin ne kadarının geçtiğini gösterir. Doluluk çizginin solundaysa rahatsın.
-- **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez. İstersen yoğun geçen 5 saatlik pencere sıfırlanınca da bildirim.
+- **Bildirimler:** 5 saatlik pencere %50 / %75 / %90, haftalık ve her modele özel haftalık limit %80 / %95, context 20K'nın altına inince. Her eşik pencere başına bir kez. İstersen yoğun geçen 5 saatlik pencere sıfırlanınca da bildirim.
+- **Mini pencere (isteğe bağlı):** her zaman üstte duran, istediğin yere sürükleyebileceğin küçük gösterge; konumunu hatırlar. Çift tıklayınca panel açılır. Ayarlardan veya tray menüsünden açılır.
+- **Kısayol tuşu:** `Ctrl+Alt+U` popup'ı her yerden açıp kapatır (ayarlardan değişir veya kapanır).
+- **Claude durumu (isteğe bağlı):** başlıktaki küçük etiket status.claude.com'daki anlık durumu gösterir; tıklayınca durum sayfası açılır.
 - Windows ile başlar, arka planda çalışır. Boşta ~35 MB RAM, ~0 CPU. Kurulum 2.5 MB.
 - Türkçe ve İngilizce. Varsayılan sistem dili; ayarlardan değiştirilebilir. Tepsi menüsü, tooltip ve bildirimler de aynı dili kullanır.
 
@@ -30,7 +33,8 @@ Sol tık popup'ı açar, odak kaybedince ya da Esc ile kapanır. Sağ tık: Yeni
 
 Bir uygulamanın OAuth token'ını okumasına şüpheyle yaklaşmak doğru. Bu yüzden:
 
-- Token yalnızca `https://api.anthropic.com/api/oauth/usage` adresine gider. Başka hiçbir ağ isteği yok; CSP'de `connect-src` sadece bu alan adı.
+- Token yalnızca `https://api.anthropic.com/api/oauth/usage` adresine gider. Varsayılan olarak başka hiçbir ağ isteği yok; webview CSP'sinde `connect-src` sadece bu alan adı.
+- Tek istisna isteğe bağlı: ayarlarda "Claude durumunu göster" açılırsa `https://status.claude.com/api/v2/status.json` da sorgulanır (herkese açık, token ve kimlik bilgisi gitmez). Sen açmadıkça kapalıdır.
 - `~/.claude/.credentials.json` **salt okunur** açılır. Uygulama token yenilemez, dosyaya yazmaz; yenilemeyi Claude Code kendisi yapar.
 - Token hiçbir log satırına yazılmaz; log'da `sk-ant-oat01-****` olarak maskelenir.
 - Telemetri, analytics, crash reporting yok.
@@ -70,7 +74,7 @@ Yerel veriler (context, günlük istatistikler) API'den bağımsızdır; bu duru
 
 ## Ayarlar
 
-Popup içinde dişli ikonu. Yenileme aralığı, otomatik veya elle context penceresi, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), saat biçimi (sistem / 24 saat / 12 saat), kullanılan veya kalan yüzde, tepsi ikonunda yüzde yazısı, Windows ile başlatma, bildirim eşikleri, reset bildirimi. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
+Popup içinde dişli ikonu. Yenileme aralığı, otomatik veya elle context penceresi, tema (koyu / açık / sistem), dil (sistem / Türkçe / English), saat biçimi (sistem / 24 saat / 12 saat), kullanılan veya kalan yüzde, tepsi ikonunda yüzde yazısı, Windows ile başlatma, mini pencere, kısayol tuşu, Claude durumu, bildirim eşikleri, reset bildirimi. Dosya: `%APPDATA%\UsageTray\settings.json`; bozuksa varsayılanlara dönülür.
 
 ## Geliştirme
 
@@ -104,6 +108,8 @@ src-tauri/src/toasts.rs        bildirimler ve dedupe
 Stack: Tauri v2, Rust, React 19, Vite. İkon tiny-skia ile runtime'da çizilir. Tam spec: `USAGETRAY_SPEC.md`, çalışma notları: `CLAUDE.md`.
 
 ## Lisans
+
+UsageTray işine yaradıysa geliştirmesini [bağışla](https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA) destekleyebilirsin.
 
 Geliştiren: Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org, [www.okutan.org](https://www.okutan.org)).
 

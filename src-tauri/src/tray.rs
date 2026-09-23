@@ -260,13 +260,15 @@ fn build_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<(Menu<R>, CheckMe
     let st = app.state::<AppState>().settings().strings();
     let refresh = MenuItem::with_id(app, "refresh", st.menu_refresh(), true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", st.menu_settings(), true, None::<&str>)?;
+    let mini_on = app.state::<AppState>().settings().mini_window;
+    let mini = CheckMenuItem::with_id(app, "mini", st.menu_mini(), true, mini_on, None::<&str>)?;
     let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
     let autostart =
         CheckMenuItem::with_id(app, "autostart", st.menu_autostart(), true, autostart_on, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", st.menu_quit(), true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
-        &[&refresh, &settings, &autostart, &PredefinedMenuItem::separator(app)?, &quit],
+        &[&refresh, &settings, &mini, &autostart, &PredefinedMenuItem::separator(app)?, &quit],
     )?;
     Ok((menu, autostart))
 }
@@ -310,6 +312,12 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             "settings" => {
                 show_popup(app);
                 let _ = app.emit("navigate", "settings");
+            }
+            "mini" => {
+                if let Some(state) = app.try_state::<AppState>() {
+                    let on = !state.settings().mini_window;
+                    crate::commands::set_mini(app, &state, on);
+                }
             }
             "autostart" => {
                 let enabled = app
@@ -404,6 +412,9 @@ pub fn tooltip_for(snap: &Snapshot, st: &crate::i18n::Strings, show_remaining: b
     }
     for l in &snap.scoped {
         lines.push(st.tip_scoped(&l.label, &pct(l.utilization)));
+    }
+    if let Some(line) = snap.service.as_ref().and_then(|s| st.tip_service(&s.indicator)) {
+        lines.push(line);
     }
     if snap.stale {
         lines.push(st.tip_stale().into());

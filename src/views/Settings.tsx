@@ -8,6 +8,8 @@ import { MIN_POLL_INTERVAL_SEC, type Settings, type Snapshot, type Theme, type T
 
 const FIVE_HOUR_OPTIONS = [50, 75, 90];
 const SEVEN_DAY_OPTIONS = [80, 95];
+// Mirror of settings::HOTKEY_CHOICES (Rust). "" = off.
+const HOTKEY_OPTIONS = ["Ctrl+Alt+U", "Ctrl+Shift+U", "Alt+Shift+U"];
 
 type Props = {
   onBack: () => void;
@@ -159,6 +161,28 @@ export default function SettingsView({ onBack, onSaved, onAbout }: Props) {
             checked={s.showPercentText}
             onChange={(v) => patch({ showPercentText: v })}
           />
+          <Toggle
+            label={t("sMini")}
+            hint={t("sMiniHint")}
+            checked={s.miniWindow}
+            onChange={(v) => patch({ miniWindow: v })}
+          />
+          <Toggle
+            label={t("sStatus")}
+            hint={t("sStatusHint")}
+            checked={s.showStatus}
+            onChange={(v) => patch({ showStatus: v })}
+          />
+          <Row label={t("sHotkey")} hint={t("sHotkeyHint")}>
+            <select className="input" value={s.hotkey} onChange={(e) => patch({ hotkey: e.target.value })}>
+              <option value="">{t("hotkeyOff")}</option>
+              {HOTKEY_OPTIONS.map((h) => (
+                <option key={h} value={h}>
+                  {h}
+                </option>
+              ))}
+            </select>
+          </Row>
           <Toggle
             label={t("sAutostart")}
             hint={t("sAutostartHint")}

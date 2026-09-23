@@ -12,6 +12,8 @@ export const APP = {
   github: "https://github.com/hsnsdt/usagebar",
   issues: "https://github.com/hsnsdt/usagebar/issues",
   releases: "https://github.com/hsnsdt/usagebar/releases",
+  // Also in README.md, README.tr.md and .github/FUNDING.yml.
+  donate: "https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA",
   license: "MIT",
 };
 
@@ -55,6 +57,13 @@ function TagGlyph() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20 12l-8 8-9-9V3h8z" />
       <circle cx="7.5" cy="7.5" r="1.5" />
+    </svg>
+  );
+}
+function HeartGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />
     </svg>
   );
 }
@@ -102,6 +111,10 @@ export default function About({ onBack }: { onBack: () => void }) {
         <section className="row-card row-card--list">
           <LinkRow icon={<MailGlyph />} title={APP.author} sub={APP.email} onClick={() => open(`mailto:${APP.email}`)} />
           <LinkRow icon={<GlobeGlyph />} title={t("aboutWebsite")} sub="www.okutan.org" onClick={() => open(APP.website)} />
+        </section>
+
+        <section className="row-card row-card--list">
+          <LinkRow icon={<HeartGlyph />} title={t("aboutDonate")} sub={t("aboutDonateSub")} onClick={() => open(APP.donate)} />
         </section>
 
         <div className="eyebrow eyebrow--group">{t("aboutProject")}</div>

@@ -12,7 +12,10 @@ The Windows counterpart of Usagebar on macOS.
 - **Tray icon:** a colour-coded ring (green / yellow / orange / red) filled to the 5-hour window's utilisation. The tooltip shows both windows.
 - **Popup:** ring gauge for the 5-hour window with a live countdown and a pace verdict; weekly limit with model-specific weekly limits (e.g. Fable) underneath; extra usage spend when it is switched on for the account; remaining context (with project and model); a 7-day daily token chart with up/down change badges versus yesterday.
 - **Pace marker:** the small tick on each bar and on the ring shows how much of the window has elapsed. If the fill is left of the tick, you are fine.
-- **Notifications:** 5-hour window at 50% / 75% / 90%, weekly at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window. Optionally a toast when a busy 5-hour window resets.
+- **Notifications:** 5-hour window at 50% / 75% / 90%, weekly and each model-specific weekly limit at 80% / 95%, and when remaining context drops under 20K. Each threshold fires once per window. Optionally a toast when a busy 5-hour window resets.
+- **Mini window (optional):** a small always-on-top gauge you can drag anywhere; it remembers its position. Double-click opens the panel. Toggle it in settings or the tray menu.
+- **Keyboard shortcut:** `Ctrl+Alt+U` toggles the popup from anywhere (changeable or off in settings).
+- **Claude status (opt-in):** a small pill in the header shows status.claude.com's current state; click it to open the status page.
 - Starts with Windows, runs in the background. About 35 MB RAM idle, ~0 CPU, 2.5 MB installer.
 - Turkish and English. Follows the system language by default; switchable in settings. The tray menu, tooltip and toasts use the same language.
 
@@ -30,7 +33,8 @@ Left click opens the popup; it closes on focus loss or Esc. Right click: Refresh
 
 Being suspicious of an app that reads your OAuth token is the right instinct. So:
 
-- The token is sent only to `https://api.anthropic.com/api/oauth/usage`. There is no other network request; the CSP restricts `connect-src` to that host.
+- The token is sent only to `https://api.anthropic.com/api/oauth/usage`. By default there is no other network request; the CSP restricts the webview's `connect-src` to that host.
+- The one exception is opt-in: turning on "Show Claude status" in settings also fetches `https://status.claude.com/api/v2/status.json` (public, no token, no identifying data). It is off unless you enable it.
 - `~/.claude/.credentials.json` is opened **read-only**. The app never refreshes the token or writes to the file; Claude Code does the refreshing.
 - The token never appears in a log line; it is masked as `sk-ant-oat01-****`.
 - No telemetry, analytics or crash reporting.
@@ -70,7 +74,7 @@ Local data (context, daily stats) does not depend on the API and keeps updating 
 
 ## Settings
 
-The gear icon in the popup. Refresh interval, automatic or manual context window, theme (dark / light / system), language (system / Türkçe / English), time format (system / 24-hour / 12-hour), used or remaining percentages, percent text on the tray icon, start with Windows, notification thresholds, reset notification. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
+The gear icon in the popup. Refresh interval, automatic or manual context window, theme (dark / light / system), language (system / Türkçe / English), time format (system / 24-hour / 12-hour), used or remaining percentages, percent text on the tray icon, start with Windows, mini window, keyboard shortcut, Claude status, notification thresholds, reset notification. Stored in `%APPDATA%\UsageTray\settings.json`; a corrupt file falls back to defaults.
 
 ## Development
 
@@ -104,6 +108,8 @@ src-tauri/src/toasts.rs        notifications and dedupe
 Stack: Tauri v2, Rust, React 19, Vite. The icon is drawn at runtime with tiny-skia. Full spec: `USAGETRAY_SPEC.md`, working notes: `CLAUDE.md`.
 
 ## License
+
+If UsageTray is useful to you, you can support its development with a [donation](https://checkout.dodopayments.com/session/cks_0NoEIncCGB5ccvyXS06SA).
 
 Developed by Sedat Okutan ([hsnsdt](https://github.com/hsnsdt), sedat@okutan.org, [www.okutan.org](https://www.okutan.org)).
 

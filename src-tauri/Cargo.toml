@@ -1,6 +1,6 @@
 [package]
 name = "usagetray"
-version = "0.1.4"
+version = "0.1.5"
 description = "Windows tray app that shows Claude Code usage limits"
 authors = ["Sedat Okutan <sedat@okutan.org>"]
 edition = "2021"
@@ -30,6 +30,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 tracing-appender = "0.2"
 sys-locale = "0.3"
+tauri-plugin-global-shortcut = "2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.60", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading"] }

@@ -1,6 +1,7 @@
 //! Windows toast notifications with per-window dedupe persisted to disk.
 //! (Named `toasts` because `notify` is the file-watcher crate.)
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,15 @@ pub struct ToastState {
     seven_day_fired: Vec<u8>,
     context_session: Option<String>,
     context_fired: bool,
+    /// Per model/surface weekly limit (key: label): same dedupe as seven_day.
+    scoped: BTreeMap<String, ScopedFired>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+struct ScopedFired {
+    reset: Option<String>,
+    fired: Vec<u8>,
 }
 
 fn path() -> PathBuf {
@@ -101,6 +111,22 @@ fn evaluate(st: &mut ToastState, snap: &Snapshot, settings: &Settings, session_f
                 title: st_lang.toast_week_title(t),
                 body: st_lang.toast_week_body(w.resets_at_utc()),
             });
+        }
+    }
+
+    // Model/surface limits share the weekly thresholds. Labels that vanish
+    // from the response are forgotten so the state file cannot grow forever.
+    if fresh {
+        st.scoped.retain(|k, _| snap.scoped.iter().any(|l| &l.label == k));
+        for l in &snap.scoped {
+            let entry = st.scoped.entry(l.label.clone()).or_default();
+            let w = WindowSnap { utilization: l.utilization, resets_at: l.resets_at.clone() };
+            if let Some(t) = window_toast(&w, &settings.notifications.seven_day, &mut entry.reset, &mut entry.fired) {
+                out.push(Toast {
+                    title: st_lang.toast_scoped_title(&l.label, t),
+                    body: st_lang.toast_week_body(w.resets_at_utc()),
+                });
+            }
         }
     }
 
@@ -205,6 +231,7 @@ mod tests {
             seven_day: None,
             scoped: Vec::new(),
             spend: None,
+            service: None,
             context: None,
             today: TodaySnap::default(),
             week: Vec::new(),
@@ -269,6 +296,25 @@ mod tests {
         let mut st = ToastState::default();
         assert_eq!(evaluate(&mut st, &snap(95.0, &past), &off, None).len(), 1);
         assert!(evaluate(&mut st, &snap(1.0, &future), &off, None).is_empty());
+    }
+
+    #[test]
+    fn scoped_limits_use_weekly_thresholds() {
+        use crate::state::ScopedSnap;
+        let settings = Settings { language: "en".into(), ..Settings::default() };
+        let mut st = ToastState::default();
+        let mut s = snap(0.0, "A");
+        s.scoped = vec![ScopedSnap { label: "Fable".into(), utilization: 70.0, resets_at: Some("W".into()) }];
+        assert!(evaluate(&mut st, &s, &settings, None).is_empty());
+        s.scoped[0].utilization = 82.0;
+        let t = evaluate(&mut st, &s, &settings, None);
+        assert_eq!(t.len(), 1);
+        assert_eq!(t[0].title, "Claude — Fable weekly limit 80%");
+        assert!(evaluate(&mut st, &s, &settings, None).is_empty());
+        // Label gone from the response: state is dropped.
+        s.scoped.clear();
+        evaluate(&mut st, &s, &settings, None);
+        assert!(st.scoped.is_empty());
     }
 
     #[test]

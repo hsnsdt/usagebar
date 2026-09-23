@@ -6,6 +6,9 @@ use std::path::PathBuf;
 /// Undocumented, community-discovered endpoint. May change without notice.
 pub const USAGE_ENDPOINT: &str = "https://api.anthropic.com/api/oauth/usage";
 
+/// Public service status (opt-in, no auth). Only non-Anthropic-API host.
+pub const STATUS_ENDPOINT: &str = "https://status.claude.com/api/v2/status.json";
+
 /// Required beta header for the OAuth usage endpoint.
 pub const ANTHROPIC_BETA: &str = "oauth-2025-04-20";
 

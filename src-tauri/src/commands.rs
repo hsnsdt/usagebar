@@ -36,6 +36,20 @@ pub fn save_settings<R: Runtime>(
             tracing::warn!("autostart change failed: {e}");
         }
     }
+    if before.mini_window != saved.mini_window {
+        crate::mini::apply(&app, saved.mini_window);
+        tray::rebuild_menu(&app);
+    }
+    if before.show_status != saved.show_status {
+        let h = app.clone();
+        tauri::async_runtime::spawn(async move {
+            crate::status_page::refresh(&h).await;
+            crate::state::publish(&h);
+        });
+    }
+    if before.hotkey != saved.hotkey {
+        crate::hotkey::apply(&app, &saved.hotkey);
+    }
     if before.language != saved.language {
         tray::rebuild_menu(&app);
     }
@@ -47,7 +61,29 @@ pub fn save_settings<R: Runtime>(
         }
     }
     crate::state::publish(&app);
+    use tauri::Emitter;
+    let _ = app.emit("settings-changed", &saved);
     saved
+}
+
+/// Turn the mini window on or off (its own close button, tray menu).
+#[tauri::command]
+pub fn set_mini_window<R: Runtime>(app: AppHandle<R>, state: State<'_, AppState>, on: bool) {
+    set_mini(&app, &state, on);
+}
+
+pub fn set_mini<R: Runtime>(app: &AppHandle<R>, state: &AppState, on: bool) {
+    state.set_mini_window(on);
+    crate::mini::apply(app, on);
+    tray::rebuild_menu(app);
+    use tauri::Emitter;
+    let _ = app.emit("settings-changed", &state.settings());
+}
+
+/// Open the main popup (double-click / button on the mini window).
+#[tauri::command]
+pub fn open_popup<R: Runtime>(app: AppHandle<R>) {
+    tray::show_popup(&app);
 }
 
 #[tauri::command]

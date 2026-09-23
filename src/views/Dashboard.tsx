@@ -20,7 +20,9 @@ import {
 } from "../format";
 import { refreshNow } from "../hooks/useUsage";
 import { t, useLang } from "../i18n";
-import type { ScopedSnap, Snapshot, SpendSnap, WindowSnap } from "../types";
+import { invoke } from "@tauri-apps/api/core";
+import type { Key } from "../i18n";
+import type { ScopedSnap, ServiceSnap, Snapshot, SpendSnap, WindowSnap } from "../types";
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -48,6 +50,7 @@ export default function Dashboard({ snapshot, now, onOpenSettings }: Props) {
           <div className="head__title">
             <span>Claude</span>
             {snapshot.plan && <span className="badge">{snapshot.plan.toUpperCase()}</span>}
+            {snapshot.service && <ServicePill service={snapshot.service} />}
           </div>
           <StatusLine snapshot={snapshot} now={now} />
         </div>
@@ -116,6 +119,28 @@ function StatusLine({ snapshot, now }: { snapshot: Snapshot; now: Date }) {
       <span className={`dot ${dot}`} />
       {text}
     </div>
+  );
+}
+
+const SERVICE: Record<string, { key: Key; cls: string }> = {
+  none: { key: "svcNone", cls: "svc--ok" },
+  minor: { key: "svcMinor", cls: "svc--warn" },
+  major: { key: "svcMajor", cls: "svc--bad" },
+  critical: { key: "svcCritical", cls: "svc--bad" },
+  maintenance: { key: "svcMaintenance", cls: "svc--info" },
+};
+
+function ServicePill({ service }: { service: ServiceSnap }) {
+  const s = SERVICE[service.indicator] ?? { key: "svcUnknown" as Key, cls: "svc--info" };
+  return (
+    <button
+      className={`svc ${s.cls}`}
+      title={`${service.description || t(s.key)} · ${t("svcOpen")}`}
+      onClick={() => invoke("open_url", { url: "https://status.claude.com" })}
+    >
+      <span className="svc__dot" />
+      {t(s.key)}
+    </button>
   );
 }
 

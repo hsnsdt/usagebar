@@ -6,6 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
+/// Global shortcut choices offered in the UI. Empty string = off.
+pub const HOTKEY_CHOICES: &[&str] = &["", "Ctrl+Alt+U", "Ctrl+Shift+U", "Alt+Shift+U"];
+pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+U";
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct NotificationSettings {
@@ -38,6 +42,15 @@ pub struct Settings {
     pub show_remaining: bool,
     /// "system" | "24h" | "12h"
     pub time_format: String,
+    /// Global shortcut that toggles the popup; one of HOTKEY_CHOICES.
+    pub hotkey: String,
+    /// Poll status.claude.com. Off by default (extra host, see README).
+    pub show_status: bool,
+    /// Always-on-top mini window.
+    pub mini_window: bool,
+    /// Last mini window position, physical px. Written by the window itself,
+    /// never by the settings UI.
+    pub mini_pos: Option<[i32; 2]>,
     pub usable_context_tokens: u64,
     /// Derive the usable context from the session's model instead of using
     /// `usable_context_tokens`.
@@ -57,6 +70,10 @@ impl Default for Settings {
             show_percent_text: false,
             show_remaining: false,
             time_format: "system".into(),
+            hotkey: DEFAULT_HOTKEY.into(),
+            show_status: false,
+            mini_window: false,
+            mini_pos: None,
             usable_context_tokens: config::DEFAULT_USABLE_CONTEXT_TOKENS,
             auto_context_window: true,
             start_with_windows: true,
@@ -82,6 +99,9 @@ impl Settings {
         }
         if !matches!(self.time_format.as_str(), "system" | "24h" | "12h") {
             self.time_format = "system".into();
+        }
+        if !HOTKEY_CHOICES.contains(&self.hotkey.as_str()) {
+            self.hotkey = DEFAULT_HOTKEY.into();
         }
         let clamp = |v: Vec<u8>| -> Vec<u8> {
             let mut v: Vec<u8> = v.into_iter().filter(|p| (1..=100).contains(p)).collect();
@@ -145,6 +165,16 @@ mod tests {
         assert!(s.notifications.on_reset);
         assert!(!s.show_remaining);
         assert_eq!(s.time_format, "system");
+        assert_eq!(s.hotkey, DEFAULT_HOTKEY);
+        assert!(!s.show_status, "status page must stay opt-in");
+    }
+
+    #[test]
+    fn hotkey_is_limited_to_choices() {
+        let off = Settings { hotkey: String::new(), ..Default::default() }.sanitized();
+        assert_eq!(off.hotkey, "");
+        let bad = Settings { hotkey: "Ctrl+Alt+Delete".into(), ..Default::default() }.sanitized();
+        assert_eq!(bad.hotkey, DEFAULT_HOTKEY);
     }
 
     #[test]
